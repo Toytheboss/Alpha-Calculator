@@ -1,0 +1,11 @@
+{
+  "name": "alpha-calculator",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler pages dev . --kv ALPHA_KV",
+    "deploy": "node scripts/deploy.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.14.0"
+  }
+}

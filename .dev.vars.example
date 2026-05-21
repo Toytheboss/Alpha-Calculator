@@ -1,0 +1,2 @@
+ADMIN_PASSWORD=your-strong-password-here
+SESSION_SECRET=random-32-char-string-here

@@ -1,0 +1,2003 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Binance Alpha 统计系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f7f2eb;
+      --bg-elevated: #fffdf9;
+      --surface: rgba(255, 253, 248, 0.95);
+      --surface-solid: #fffdf9;
+      --surface2: #f3ece2;
+      --border: rgba(160, 120, 80, 0.2);
+      --border-hover: rgba(140, 100, 60, 0.35);
+      --text: #3d3428;
+      --muted: #8b7355;
+      --primary: #d97706;
+      --primary-light: #f59e0b;
+      --primary-dim: rgba(217, 119, 6, 0.12);
+      --cta: #c2410c;
+      --cta-light: #ea580c;
+      --cta-dim: rgba(194, 65, 12, 0.1);
+      --green: #4d7a46;
+      --green-dim: rgba(77, 122, 70, 0.12);
+      --red: #c45c3e;
+      --red-dim: rgba(196, 92, 62, 0.1);
+      --blue: #9a7349;
+      --blue-dim: rgba(154, 115, 73, 0.12);
+      --purple: #a16207;
+      --purple-dim: rgba(161, 98, 7, 0.1);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow: 0 4px 20px rgba(120, 80, 40, 0.08);
+      --shadow-lg: 0 8px 32px rgba(120, 80, 40, 0.12);
+      --glow-warm: 0 4px 16px rgba(217, 119, 6, 0.15);
+      --glow-cta: 0 4px 14px rgba(194, 65, 12, 0.12);
+      --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.55;
+      font-weight: 400;
+      color-scheme: light;
+    }
+
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(180, 140, 100, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(180, 140, 100, 0.06) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black, transparent 80%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bg-glow {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 0% 0%, rgba(253, 230, 180, 0.5), transparent 50%),
+        radial-gradient(ellipse 60% 45% at 100% 10%, rgba(255, 237, 213, 0.45), transparent 50%),
+        radial-gradient(ellipse 50% 40% at 50% 100%, rgba(245, 230, 210, 0.35), transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px 56px;
+    }
+
+    /* —— Topbar (not editable) —— */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 0 -24px 32px;
+      padding: 18px 24px;
+      background: rgba(255, 253, 248, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-icon {
+      width: 44px; height: 44px;
+      background: #000;
+      border-radius: 12px;
+      display: grid; place-items: center;
+      box-shadow: var(--glow-warm);
+      flex-shrink: 0;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+    }
+    .brand-icon img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      display: block;
+    }
+    .brand h1 {
+      font-family: Sora, sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--text);
+    }
+    .brand p { font-size: 0.78rem; color: var(--muted); margin-top: 3px; font-weight: 400; }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+    .btn {
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 9px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      transition: background var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+    }
+    .btn:hover {
+      background: #ebe3d6;
+      border-color: var(--border-hover);
+    }
+    .btn:focus-visible {
+      outline: 2px solid var(--cta);
+      outline-offset: 2px;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: #fffdf9;
+      border-color: transparent;
+      font-weight: 600;
+      box-shadow: var(--glow-warm);
+    }
+    .btn-primary:hover {
+      filter: brightness(1.05);
+      box-shadow: 0 4px 20px rgba(217, 119, 6, 0.28);
+    }
+    .btn-cta {
+      background: linear-gradient(135deg, var(--cta), var(--cta-light));
+      color: #fffdf9;
+      border-color: transparent;
+    }
+    .btn-cta:hover { box-shadow: var(--glow-cta); }
+    .btn-ghost { background: transparent; color: var(--text); }
+    .btn-danger {
+      color: var(--red);
+      border-color: rgba(196, 92, 62, 0.35);
+    }
+    .btn-danger:hover { background: var(--red-dim); }
+
+    .edit-hint { font-size: 0.72rem; color: var(--muted); display: none; }
+    body.edit-mode .edit-hint { display: inline; }
+
+    #main-content[contenteditable="true"] {
+      outline: 1px dashed rgba(217, 119, 6, 0.45);
+      outline-offset: 6px;
+      border-radius: var(--radius);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-family: Sora, sans-serif;
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+    }
+    .section-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+
+    .panel {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      transition: border-color var(--transition);
+    }
+    .panel:hover { border-color: var(--border-hover); }
+
+    .panel h2 {
+      font-family: Sora, sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel h2 .panel-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--panel-accent, var(--primary));
+      box-shadow: 0 0 10px var(--panel-accent, var(--primary));
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    input, select {
+      width: 100%;
+      font-family: inherit;
+      font-size: 0.875rem;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: #fffdf9;
+      color: var(--text);
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    input:hover, select:hover { border-color: var(--border-hover); }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-dim);
+    }
+    input[readonly] {
+      background: #fef9ee;
+      border-color: rgba(217, 119, 6, 0.25);
+      color: var(--primary);
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 500;
+    }
+
+    .form-actions { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .table-scroll {
+      overflow-x: auto;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+    th, td {
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      font-family: Sora, sans-serif;
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      background: #f3ece2;
+    }
+    tbody tr { transition: background var(--transition); cursor: default; }
+    tbody tr:hover td { background: rgba(217, 119, 6, 0.06); }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .mono { font-family: "JetBrains Mono", monospace; font-size: 0.8rem; }
+    .amount-pos { color: var(--green); font-weight: 500; }
+    .amount-neg { color: var(--red); font-weight: 500; }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+    .empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.4; color: var(--muted); }
+
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      padding: 14px 20px;
+      background: #fffdf9;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--primary);
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      color: var(--text);
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 100;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    .form-hint {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 16px;
+    }
+
+    .account-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-end;
+      margin-bottom: 16px;
+    }
+    .account-toolbar input { max-width: 200px; }
+    .account-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .account-tag {
+      font-size: 0.75rem;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #f3ece2;
+      border: 1px solid var(--border);
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      min-width: 140px;
+      cursor: default;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .account-tag:hover,
+    .account-tag.preview-active {
+      border-color: rgba(217, 119, 6, 0.45);
+      box-shadow: var(--shadow);
+    }
+
+    .account-preview {
+      position: fixed;
+      z-index: 120;
+      width: 272px;
+      padding: 14px 16px;
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg);
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(8px);
+      transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+    }
+    .account-preview.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    .account-preview-head {
+      font-family: Sora, sans-serif;
+      font-weight: 600;
+      font-size: 0.88rem;
+      margin-bottom: 4px;
+    }
+    .account-preview-sub {
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .account-preview-hero {
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      background: #f3ece2;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .account-preview-hero.positive { background: var(--green-dim); }
+    .account-preview-hero.negative { background: var(--red-dim); }
+    .account-preview-hero .label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .account-preview-hero .value {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .account-preview-hero.positive .value { color: var(--green); }
+    .account-preview-hero.negative .value { color: var(--red); }
+    .account-preview-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .account-preview-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      gap: 12px;
+    }
+    .account-preview-list .k { color: var(--muted); }
+    .account-preview-list .v {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .account-tag-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+    }
+    .account-tag-meta {
+      font-size: 0.68rem;
+      color: var(--muted);
+      font-family: "JetBrains Mono", monospace;
+    }
+    .account-tag-actions {
+      display: flex;
+      gap: 4px;
+      margin-left: auto;
+    }
+    .account-tag button {
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 0.72rem;
+      padding: 2px 4px;
+      line-height: 1;
+      border-radius: 4px;
+    }
+    .account-tag .btn-tag-edit {
+      color: var(--primary);
+    }
+    .account-tag .btn-tag-edit:hover { background: var(--primary-dim); }
+    .account-tag .btn-tag-del {
+      color: var(--red);
+      font-size: 0.85rem;
+    }
+    .account-tag .btn-tag-del:hover { background: var(--red-dim); }
+
+    .btn-edit-row {
+      font-size: 0.7rem;
+      padding: 4px 8px;
+      margin-left: 4px;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(61, 52, 40, 0.45);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      width: 100%;
+      max-width: 440px;
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      padding: 22px;
+    }
+    .modal h3 {
+      font-family: Sora, sans-serif;
+      font-size: 1rem;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 18px;
+    }
+
+    .account-overview-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: flex-end;
+      margin-bottom: 16px;
+    }
+    .account-overview-bar > div { min-width: 160px; }
+    .account-monthly-list { display: flex; flex-direction: column; gap: 10px; }
+    .account-month-details {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: #fffdf9;
+      overflow: hidden;
+    }
+    .account-month-details[open] {
+      border-color: rgba(217, 119, 6, 0.35);
+      box-shadow: var(--shadow);
+    }
+    .account-month-details > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-weight: 500;
+      transition: background var(--transition);
+    }
+    .account-month-details > summary::-webkit-details-marker { display: none; }
+    .account-month-details > summary::before {
+      content: "▶";
+      font-size: 0.65rem;
+      color: var(--primary);
+      margin-right: 10px;
+      transition: transform var(--transition);
+    }
+    .account-month-details[open] > summary::before {
+      transform: rotate(90deg);
+    }
+    .account-month-details > summary:hover { background: #fef9ee; }
+    .acc-summary-name {
+      font-family: Sora, sans-serif;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .acc-summary-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: "JetBrains Mono", monospace;
+    }
+    .account-day-table-wrap {
+      padding: 0 12px 12px;
+      border-top: 1px solid var(--border);
+    }
+    .account-day-table th:first-child,
+    .account-day-table td:first-child {
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .account-day-table td.projects-cell {
+      max-width: 180px;
+      font-size: 0.78rem;
+      line-height: 1.4;
+    }
+    .account-day-table tr.day-empty td { color: var(--muted); opacity: 0.65; }
+    .account-day-table tr.day-has-data { background: rgba(217, 119, 6, 0.04); }
+    .account-day-table tr.day-manual { background: rgba(217, 119, 6, 0.07); }
+    .account-day-table td.cell-editable { padding: 4px 6px; }
+    .day-cell-input {
+      width: 100%;
+      min-width: 64px;
+      padding: 6px 8px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.78rem;
+      border: 1px solid transparent;
+      background: transparent;
+      border-radius: 6px;
+      color: inherit;
+    }
+    .day-cell-input:hover {
+      border-color: var(--border);
+      background: #fffdf9;
+    }
+    .day-cell-input:focus {
+      border-color: var(--primary);
+      background: #fffdf9;
+      outline: none;
+      box-shadow: 0 0 0 2px var(--primary-dim);
+    }
+    tr.day-manual .day-cell-input { border-color: rgba(217, 119, 6, 0.3); }
+    .day-cell-input.input-projects { font-family: inherit; min-width: 120px; }
+    .day-cell-input.balance-auto {
+      color: var(--blue);
+      background: rgba(154, 115, 73, 0.06);
+    }
+
+    .global-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    @media (max-width: 900px) {
+      .global-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      .global-stats { grid-template-columns: 1fr; }
+    }
+    .global-stat-card {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .global-stat-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: var(--shadow-lg);
+    }
+    .global-stat-card .label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .global-stat-card .value {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 1.35rem;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .global-stat-card .hint {
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+    .global-stat-card.accent-invest { border-top: 3px solid var(--blue); }
+    .global-stat-card.accent-wear { border-top: 3px solid var(--red); }
+    .global-stat-card.accent-profit { border-top: 3px solid var(--green); }
+    .global-stat-card.accent-balance { border-top: 3px solid var(--primary); }
+    .global-stat-card.accent-profit .value { color: var(--green); }
+    .global-stat-card.accent-wear .value { color: var(--red); }
+    .global-stat-card.accent-balance .value { color: var(--primary); }
+    .global-stat-card.negative-profit .value { color: var(--red); }
+    .global-stat-card.negative-balance .value { color: var(--red); }
+
+    .login-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      background: rgba(247, 242, 235, 0.94);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .login-screen[hidden] { display: none !important; }
+    .login-card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      padding: 28px 26px;
+    }
+    .login-card h2 {
+      font-family: Sora, sans-serif;
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+    }
+    .login-card p {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .login-error {
+      font-size: 0.78rem;
+      color: var(--red);
+      min-height: 1.2em;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-screen" id="login-screen" hidden>
+    <div class="login-card" contenteditable="false">
+      <h2>管理登录</h2>
+      <p>请输入管理密码以录入和修改数据。</p>
+      <form id="login-form">
+        <label for="login-password">管理密码</label>
+        <input type="password" id="login-password" autocomplete="current-password" required contenteditable="false" />
+        <div class="form-actions" style="margin-top: 16px">
+          <button type="submit" class="btn btn-primary" style="width: 100%" contenteditable="false">登录</button>
+        </div>
+        <p class="login-error" id="login-error" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon" title="Binance">
+          <img src="Binance_Logo.svg.png" alt="Binance" width="28" height="28" />
+        </div>
+        <div>
+          <h1>BINANCE ALPHA</h1>
+          <p>统计系统 · 月度账户收益</p>
+        </div>
+      </div>
+      <div class="toolbar">
+        <span class="edit-hint">编辑模式：点击文字可改标题说明</span>
+        <button type="button" class="btn btn-ghost" id="btn-edit" contenteditable="false">编辑文字</button>
+        <button type="button" class="btn btn-ghost" id="btn-export" contenteditable="false">
+          <span>导出 JSON</span>
+        </button>
+        <button type="button" class="btn btn-cta" id="btn-download" contenteditable="false">下载 HTML</button>
+        <button type="button" class="btn btn-ghost" id="btn-logout" contenteditable="false" hidden>退出登录</button>
+        <button type="button" class="btn btn-danger" id="btn-reset" contenteditable="false">清空数据</button>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <div class="section-head">
+        <span class="section-title">总览</span>
+        <span class="section-line"></span>
+      </div>
+
+      <div class="global-stats" id="global-stats" contenteditable="false"></div>
+
+      <div class="section-head">
+        <span class="section-title">账户管理</span>
+        <span class="section-line"></span>
+      </div>
+
+      <section class="panel" style="margin-bottom: 24px">
+        <h2><span class="panel-dot" style="background: var(--muted);"></span> 账户列表</h2>
+        <div class="account-toolbar" contenteditable="false">
+          <div>
+            <label for="new-account-name">新账户名称</label>
+            <input type="text" id="new-account-name" placeholder="如 账号21" contenteditable="false" />
+          </div>
+          <div>
+            <label for="new-account-fund">初始资金（可选）</label>
+            <input type="number" id="new-account-fund" min="0" step="0.01" placeholder="0" contenteditable="false" />
+          </div>
+          <div>
+            <label for="new-account-points">期初积分（可选）</label>
+            <input type="number" id="new-account-points" min="0" step="1" placeholder="0" contenteditable="false" />
+          </div>
+          <button type="button" class="btn btn-primary" id="btn-add-account" contenteditable="false">添加账户</button>
+          <button type="button" class="btn btn-ghost" id="btn-init-accounts" contenteditable="false">一键创建 24 个账户</button>
+        </div>
+        <div class="account-list" id="account-list"></div>
+        <p class="form-hint">创建账户时可填初始资金与期初积分；已有账户点击「编辑」修改。数据可通过「导出 JSON」备份。</p>
+      </section>
+
+      <div class="section-head">
+        <span class="section-title">月度账户收益</span>
+        <span class="section-line"></span>
+      </div>
+
+      <section class="panel" style="margin-bottom: 24px">
+        <h2 style="border: none; padding: 0; margin-bottom: 12px;">
+          <span class="panel-dot" style="background: var(--primary);"></span>
+          按账户 · 按月展开每日明细
+        </h2>
+        <p class="form-hint" style="margin-top: 0; margin-bottom: 14px;">
+          点击账户展开该月 1–31 日。资金结余：当日行显示期初或前日结转；下一日结余 = 前一日结余 + 前一日获利 − 前一日消耗。修改后自动重算。
+        </p>
+        <div class="account-overview-bar" contenteditable="false">
+          <div>
+            <label for="account-overview-month">统计月份</label>
+            <input type="month" id="account-overview-month" contenteditable="false" />
+          </div>
+          <button type="button" class="btn btn-ghost" id="btn-expand-all-accounts" contenteditable="false">全部展开</button>
+          <button type="button" class="btn btn-ghost" id="btn-collapse-all-accounts" contenteditable="false">全部收起</button>
+        </div>
+        <div class="account-monthly-list" id="account-monthly-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="account-preview" id="account-preview" role="tooltip" aria-hidden="true"></div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="modal-overlay" id="modal-overlay" contenteditable="false">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <h3 id="modal-title">编辑</h3>
+      <form id="modal-form">
+        <div id="modal-fields"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="modal-cancel" contenteditable="false">取消</button>
+          <button type="submit" class="btn btn-primary" contenteditable="false">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "binance-alpha-stats-v2";
+
+    let state = { accounts: [], records: [] };
+    let accountOverviewMonth = "";
+    let modalContext = null;
+    let useCloudApi = false;
+
+    function normalizeState() {
+      if (!Array.isArray(state.records)) state.records = [];
+      if (!Array.isArray(state.accounts)) state.accounts = [];
+      for (const a of state.accounts) {
+        if (a.fundOpen == null) a.fundOpen = 0;
+        if (a.pointsOpen == null) a.pointsOpen = 0;
+      }
+      migrateRecordsToAccounts();
+    }
+
+    function applyState(data) {
+      state = data && typeof data === "object" ? data : { accounts: [], records: [] };
+      normalizeState();
+    }
+
+    function loadLocal() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("binance-alpha-stats-v1");
+        if (raw) applyState(JSON.parse(raw));
+        else applyState({ accounts: [], records: [] });
+      } catch (_) {
+        applyState({ accounts: [], records: [] });
+      }
+    }
+
+    function showLogin(msg) {
+      document.getElementById("login-screen").hidden = false;
+      document.getElementById("login-error").textContent = msg || "";
+      document.getElementById("btn-logout").hidden = true;
+    }
+
+    function hideLogin() {
+      document.getElementById("login-screen").hidden = true;
+      document.getElementById("login-error").textContent = "";
+      if (useCloudApi) document.getElementById("btn-logout").hidden = false;
+    }
+
+    async function loadFromCloud() {
+      const res = await fetch("/api/data", { credentials: "include" });
+      if (res.status === 401) return { needLogin: true };
+      if (!res.ok) throw new Error("load failed");
+      applyState(await res.json());
+      return { needLogin: false };
+    }
+
+    async function persistState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (!useCloudApi) return;
+      const res = await fetch("/api/data", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(state),
+        credentials: "include",
+      });
+      if (res.status === 401) {
+        useCloudApi = false;
+        showLogin("登录已过期，请重新登录");
+        throw new Error("unauthorized");
+      }
+      if (!res.ok) throw new Error("save failed");
+    }
+
+    function migrateRecordsToAccounts() {
+      for (const r of state.records) {
+        if (r.accountId) continue;
+        if (r.account) {
+          let acc = state.accounts.find((a) => a.name === r.account);
+          if (!acc) {
+            acc = { id: uid(), name: r.account, createdAt: Date.now() };
+            state.accounts.push(acc);
+          }
+          r.accountId = acc.id;
+        }
+      }
+    }
+
+    function getAccount(id) {
+      return state.accounts.find((a) => a.id === id);
+    }
+
+    function getAccountName(id) {
+      const a = getAccount(id);
+      return a ? a.name : "未分配";
+    }
+
+    function recordAccountId(r) {
+      if (r.accountId) return r.accountId;
+      if (r.account) {
+        const acc = state.accounts.find((a) => a.name === r.account);
+        return acc ? acc.id : null;
+      }
+      return null;
+    }
+
+    function getDaysInMonth(ym) {
+      const [y, m] = ym.split("-").map(Number);
+      const count = new Date(y, m, 0).getDate();
+      const days = [];
+      for (let d = 1; d <= count; d++) {
+        days.push(`${ym}-${String(d).padStart(2, "0")}`);
+      }
+      return days;
+    }
+
+    function formatDayLabel(dateStr) {
+      const d = parseInt(dateStr.slice(8), 10);
+      return d + " 日";
+    }
+
+    function getDayManual(accountId, dayStr) {
+      return state.records.find(
+        (r) => r.type === "day_manual" && recordAccountId(r) === accountId && r.date === dayStr
+      );
+    }
+
+    function computeDayFromRecords(accountId, dateStr) {
+      let fundSpend = 0;
+      let fundProfit = 0;
+      let pointsUsed = 0;
+      const projects = [];
+
+      for (const r of state.records) {
+        if (recordAccountId(r) !== accountId) continue;
+        if (r.type === "day_manual") continue;
+        const d = r.date;
+        if (!d || d !== dateStr) continue;
+
+        if (r.type === "wear") fundSpend += wearAmount(r);
+        if (r.type === "points") {
+          pointsUsed += r.points || 0;
+          projects.push(r.note || "积分任务");
+        }
+        if (r.type === "claim") {
+          fundProfit += r.value || 0;
+          if (r.project) projects.push(r.project);
+        }
+        if (r.type === "pcs_tge" || r.type === "prime_tge") {
+          fundSpend += tgeCost(r);
+          if (r.project) projects.push(r.project);
+        }
+      }
+
+      for (const r of state.records) {
+        if (recordAccountId(r) !== accountId) continue;
+        if (r.type !== "pcs_tge" && r.type !== "prime_tge") continue;
+        if (!isTgeSold(r)) continue;
+        const soldDay = r.soldDate || r.date;
+        if (soldDay !== dateStr) continue;
+        fundProfit += tgeSoldAmount(r);
+        if (r.project) projects.push(r.project);
+      }
+
+      return { fundSpend, fundProfit, pointsUsed, projects };
+    }
+
+    function getDayContributions(accountId, dateStr) {
+      const base = computeDayFromRecords(accountId, dateStr);
+      const manual = getDayManual(accountId, dateStr);
+      if (!manual) return base;
+      return {
+        fundSpend: manual.fundDaily != null ? Number(manual.fundDaily) || 0 : base.fundSpend,
+        fundProfit: manual.profitDaily != null ? Number(manual.profitDaily) || 0 : base.fundProfit,
+        pointsUsed: manual.pointsDaily != null ? Number(manual.pointsDaily) || 0 : base.pointsUsed,
+        projects:
+          manual.projects != null && manual.projects !== ""
+            ? [String(manual.projects)]
+            : base.projects,
+      };
+    }
+
+    function getDayProfitAndSpend(accountId, dayStr) {
+      const c = getDayContributions(accountId, dayStr);
+      const m = getDayManual(accountId, dayStr);
+      return {
+        profit: m?.profitDaily != null ? Number(m.profitDaily) || 0 : c.fundProfit,
+        spend: m?.fundDaily != null ? Number(m.fundDaily) || 0 : c.fundSpend,
+      };
+    }
+
+    /**
+     * 当日行「资金结余」= 前一日资金结余（首日 = 期初初始资金）
+     * 下一日资金结余 = 当日行资金结余 + 当日获利 − 当日消耗
+     * 例：05/02 结余 = 05/01 结余 + 05/01 获利 − 05/01 消耗
+     */
+    function buildMonthFundBalances(accountId, ym) {
+      const days = getDaysInMonth(ym);
+      const map = new Map();
+      let nextDayBase = getAccount(accountId)?.fundOpen ?? 0;
+
+      for (const d of days) {
+        const manual = getDayManual(accountId, d);
+        let displayBalance;
+        if (manual?.fundBalance != null) {
+          displayBalance = Number(manual.fundBalance) || 0;
+        } else {
+          displayBalance = nextDayBase;
+        }
+        map.set(d, displayBalance);
+
+        const { profit, spend } = getDayProfitAndSpend(accountId, d);
+        nextDayBase = displayBalance + profit - spend;
+      }
+      return map;
+    }
+
+    function getRowDisplay(accountId, dayStr, fundBalances) {
+      const s = computeAccountRowStats(accountId, dayStr);
+      const m = getDayManual(accountId, dayStr);
+      const projectsRaw =
+        m?.projects != null && m.projects !== "" ? m.projects : s.projects === "—" ? "" : s.projects;
+      const chainedBalance = fundBalances?.get(dayStr) ?? s.fundBalance;
+      return {
+        date: dayStr,
+        fundBalance: m?.fundBalance != null ? Number(m.fundBalance) : chainedBalance,
+        fundDaily: m?.fundDaily != null ? Number(m.fundDaily) : s.fundDaily,
+        pointsBalance: m?.pointsBalance != null ? Number(m.pointsBalance) : s.pointsBalance,
+        pointsDaily: m?.pointsDaily != null ? Number(m.pointsDaily) : s.pointsDaily,
+        projects: projectsRaw,
+        profitDaily: m?.profitDaily != null ? Number(m.profitDaily) : s.profitDaily,
+        isManual: !!m,
+        fundBalanceAuto: m?.fundBalance == null,
+      };
+    }
+
+    function parseMoneyInput(v) {
+      if (v == null || v === "") return 0;
+      return Number(String(v).replace(/[$,\s]/g, "")) || 0;
+    }
+
+    function parseNumInput(v) {
+      if (v == null || v === "") return 0;
+      return Number(String(v).replace(/,/g, "")) || 0;
+    }
+
+    function formatMoneyInput(n) {
+      if (!n) return "";
+      return Number(n).toFixed(2);
+    }
+
+    function formatNumInput(n) {
+      if (!n) return "";
+      return String(Math.round(n));
+    }
+
+    function dayCellInput(accountId, dayStr, field, value, extraClass, inputType, attrs) {
+      const cls = ["day-cell-input", extraClass].filter(Boolean).join(" ");
+      const type = inputType || "text";
+      const attrStr = attrs || "";
+      return `<input class="${cls}" type="${type}" data-account="${accountId}" data-day="${dayStr}" data-field="${field}" value="${escapeHtml(String(value ?? ""))}" ${attrStr} contenteditable="false" />`;
+    }
+
+    function collectAccountDatesThrough(accountId, dayStr) {
+      const dates = new Set();
+      for (const r of state.records) {
+        if (recordAccountId(r) !== accountId) continue;
+        if (r.date && r.date <= dayStr) dates.add(r.date);
+        if ((r.type === "pcs_tge" || r.type === "prime_tge") && isTgeSold(r)) {
+          const soldDay = r.soldDate || r.date;
+          if (soldDay && soldDay <= dayStr) dates.add(soldDay);
+        }
+      }
+      return dates;
+    }
+
+    function computeAccountRowStats(accountId, dayStr) {
+      const acc = getAccount(accountId);
+      const fundOpen = acc?.fundOpen ?? 0;
+      const pointsOpen = acc?.pointsOpen ?? 0;
+
+      let fundProfitCum = 0;
+      let fundSpendCum = 0;
+      let pointsUsedCum = 0;
+
+      for (const d of collectAccountDatesThrough(accountId, dayStr)) {
+        const c = getDayContributions(accountId, d);
+        fundProfitCum += c.fundProfit;
+        fundSpendCum += c.fundSpend;
+        pointsUsedCum += c.pointsUsed;
+      }
+
+      const today = getDayContributions(accountId, dayStr);
+      const projects = today.projects;
+      const fundDaily = today.fundSpend;
+      const profitDaily = today.fundProfit;
+      const pointsDaily = today.pointsUsed;
+      const hasActivity =
+        fundDaily > 0 || pointsDaily > 0 || profitDaily > 0 || projects.length > 0 || !!getDayManual(accountId, dayStr);
+
+      const ym = dayStr.slice(0, 7);
+      const chained = buildMonthFundBalances(accountId, ym).get(dayStr);
+      return {
+        fundBalance: chained != null ? chained : fundOpen + fundProfitCum - fundSpendCum,
+        fundDaily,
+        pointsBalance: pointsOpen - pointsUsedCum,
+        pointsDaily,
+        projects: projects.join("、") || "—",
+        profitDaily,
+        hasActivity,
+        fundOpen,
+        pointsOpen,
+      };
+    }
+
+    function collectAllAccountDates(accountId) {
+      const dates = new Set();
+      for (const r of state.records) {
+        if (recordAccountId(r) !== accountId) continue;
+        if (r.date) dates.add(r.date);
+        if ((r.type === "pcs_tge" || r.type === "prime_tge") && isTgeSold(r)) {
+          const soldDay = r.soldDate || r.date;
+          if (soldDay) dates.add(soldDay);
+        }
+      }
+      return dates;
+    }
+
+    function computeAccountWearTotal(accountId) {
+      let total = 0;
+      const wearDays = new Set();
+
+      for (const r of state.records) {
+        if (recordAccountId(r) !== accountId) continue;
+        if (r.type === "wear") {
+          total += wearAmount(r);
+          if (r.date) wearDays.add(r.date);
+        }
+      }
+
+      for (const r of state.records) {
+        if (recordAccountId(r) !== accountId) continue;
+        if (r.type !== "day_manual" || r.fundDaily == null) continue;
+        if (r.date && wearDays.has(r.date)) continue;
+        total += Number(r.fundDaily) || 0;
+      }
+
+      return total;
+    }
+
+    function computeGlobalStats() {
+      let totalInvest = 0;
+      let totalWear = 0;
+      let totalProfit = 0;
+      let totalBalance = 0;
+      const accountCount = state.accounts.length;
+
+      for (const acc of state.accounts) {
+        totalInvest += acc.fundOpen ?? 0;
+        totalWear += computeAccountWearTotal(acc.id);
+        const s = computeAccountLifetimeStats(acc.id);
+        totalProfit += s.totalProfit;
+        totalBalance += s.endBalance;
+      }
+
+      const netProfit = totalProfit - totalWear;
+
+      return {
+        totalInvest,
+        totalWear,
+        totalProfit,
+        totalBalance,
+        netProfit,
+        accountCount,
+      };
+    }
+
+    function renderGlobalStats() {
+      const el = document.getElementById("global-stats");
+      if (!el) return;
+      const g = computeGlobalStats();
+      const profitClass = g.totalProfit < 0 ? " negative-profit" : "";
+      const balanceClass = g.totalBalance < g.totalInvest ? " negative-balance" : "";
+
+      el.innerHTML = `
+        <div class="global-stat-card accent-invest">
+          <div class="label">总投入</div>
+          <div class="value">${fmtMoney(g.totalInvest)}</div>
+          <div class="hint">${g.accountCount} 个账户期初资金合计</div>
+        </div>
+        <div class="global-stat-card accent-wear">
+          <div class="label">总磨损</div>
+          <div class="value">${fmtMoney(g.totalWear)}</div>
+          <div class="hint">刷号及当日资金消耗累计</div>
+        </div>
+        <div class="global-stat-card accent-profit${profitClass}">
+          <div class="label">总获利</div>
+          <div class="value">${fmtMoney(g.totalProfit)}</div>
+          <div class="hint">空投 / TGE 等收益合计</div>
+        </div>
+        <div class="global-stat-card accent-balance${balanceClass}">
+          <div class="label">总余额</div>
+          <div class="value">${fmtMoney(g.totalBalance)}</div>
+          <div class="hint">各账户当前资金余额合计 · 净盈亏 ${fmtMoney(g.netProfit)}</div>
+        </div>
+      `;
+    }
+
+    function computeAccountLifetimeStats(accountId) {
+      const acc = getAccount(accountId);
+      const fundOpen = acc?.fundOpen ?? 0;
+      const pointsOpen = acc?.pointsOpen ?? 0;
+      const dates = collectAllAccountDates(accountId);
+
+      let totalProfit = 0;
+      let totalSpend = 0;
+      let totalPoints = 0;
+
+      for (const d of dates) {
+        const c = getDayContributions(accountId, d);
+        totalProfit += c.fundProfit;
+        totalSpend += c.fundSpend;
+        totalPoints += c.pointsUsed;
+      }
+
+      const sorted = [...dates].sort();
+      let endBalance = fundOpen;
+      let nextDayBase = fundOpen;
+      for (const d of sorted) {
+        const manual = getDayManual(accountId, d);
+        const displayBalance =
+          manual?.fundBalance != null ? Number(manual.fundBalance) || 0 : nextDayBase;
+        const { profit, spend } = getDayProfitAndSpend(accountId, d);
+        nextDayBase = displayBalance + profit - spend;
+        endBalance = nextDayBase;
+      }
+
+      const netProfit = totalProfit - totalSpend;
+      return {
+        fundOpen,
+        pointsOpen,
+        totalProfit,
+        totalSpend,
+        netProfit,
+        endBalance,
+        totalPoints,
+        pointsRemaining: pointsOpen - totalPoints,
+        activeDays: dates.size,
+      };
+    }
+
+    function renderAccountPreviewContent(accountId) {
+      const acc = getAccount(accountId);
+      if (!acc) return "";
+      const s = computeAccountLifetimeStats(accountId);
+      const netClass = s.netProfit > 0 ? "positive" : s.netProfit < 0 ? "negative" : "";
+      const created =
+        acc.createdAt != null
+          ? new Date(acc.createdAt).toLocaleDateString("zh-CN", { year: "numeric", month: "short", day: "numeric" })
+          : "—";
+
+      return `
+        <div class="account-preview-head">${escapeHtml(acc.name)}</div>
+        <div class="account-preview-sub">自 ${created} 创建 · ${s.activeDays} 个活跃日</div>
+        <div class="account-preview-hero ${netClass}">
+          <span class="label">总体净盈亏</span>
+          <span class="value">${fmtMoney(s.netProfit)}</span>
+        </div>
+        <ul class="account-preview-list">
+          <li><span class="k">累计获利</span><span class="v amount-pos">${fmtMoney(s.totalProfit)}</span></li>
+          <li><span class="k">累计消耗</span><span class="v amount-neg">${fmtMoney(s.totalSpend)}</span></li>
+          <li><span class="k">当前资金余额</span><span class="v">${fmtMoney(s.endBalance)}</span></li>
+          <li><span class="k">期初资金</span><span class="v">${fmtMoney(s.fundOpen)}</span></li>
+          <li><span class="k">累计积分消耗</span><span class="v">${s.totalPoints.toLocaleString()}</span></li>
+          <li><span class="k">积分结余</span><span class="v">${s.pointsRemaining.toLocaleString()}</span></li>
+        </ul>
+      `;
+    }
+
+    let accountPreviewShowTimer = null;
+    let accountPreviewHideTimer = null;
+    let accountPreviewActiveId = null;
+
+    function positionAccountPreview(anchorEl) {
+      const preview = document.getElementById("account-preview");
+      if (!preview || !anchorEl) return;
+      const rect = anchorEl.getBoundingClientRect();
+      const margin = 10;
+      let left = rect.left;
+      let top = rect.bottom + margin;
+      preview.classList.add("show");
+      preview.setAttribute("aria-hidden", "false");
+      const pw = preview.offsetWidth;
+      const ph = preview.offsetHeight;
+      if (left + pw > window.innerWidth - margin) {
+        left = Math.max(margin, window.innerWidth - pw - margin);
+      }
+      if (top + ph > window.innerHeight - margin) {
+        top = Math.max(margin, rect.top - ph - margin);
+      }
+      preview.style.left = left + "px";
+      preview.style.top = top + "px";
+    }
+
+    function showAccountPreview(accountId, anchorEl) {
+      clearTimeout(accountPreviewHideTimer);
+      const preview = document.getElementById("account-preview");
+      if (!preview) return;
+      accountPreviewActiveId = accountId;
+      anchorEl.classList.add("preview-active");
+      preview.innerHTML = renderAccountPreviewContent(accountId);
+      positionAccountPreview(anchorEl);
+    }
+
+    function hideAccountPreview() {
+      const preview = document.getElementById("account-preview");
+      document.querySelectorAll(".account-tag.preview-active").forEach((el) => {
+        el.classList.remove("preview-active");
+      });
+      if (preview) {
+        preview.classList.remove("show");
+        preview.setAttribute("aria-hidden", "true");
+      }
+      accountPreviewActiveId = null;
+    }
+
+    function bindAccountPreview() {
+      const list = document.getElementById("account-list");
+      if (!list || list.dataset.previewBound) return;
+      list.dataset.previewBound = "1";
+
+      list.addEventListener("mouseover", (e) => {
+        if (e.target.closest(".account-tag-actions")) return;
+        const tag = e.target.closest(".account-tag[data-account-id]");
+        if (!tag) return;
+        const id = tag.dataset.accountId;
+        clearTimeout(accountPreviewHideTimer);
+        clearTimeout(accountPreviewShowTimer);
+        if (accountPreviewActiveId === id) return;
+        accountPreviewShowTimer = setTimeout(() => showAccountPreview(id, tag), 140);
+      });
+
+      list.addEventListener("mouseout", (e) => {
+        const tag = e.target.closest(".account-tag[data-account-id]");
+        if (!tag) return;
+        const related = e.relatedTarget;
+        if (related && tag.contains(related)) return;
+        if (related && related.closest?.(".account-tag[data-account-id]")) return;
+        clearTimeout(accountPreviewShowTimer);
+        accountPreviewHideTimer = setTimeout(hideAccountPreview, 100);
+      });
+
+      list.addEventListener("scroll", hideAccountPreview, { passive: true });
+    }
+
+    function computeAccountMonthTotals(accountId, ym) {
+      let monthProfit = 0;
+      let monthFundSpend = 0;
+      let monthPoints = 0;
+
+      for (const d of getDaysInMonth(ym)) {
+        const c = getDayContributions(accountId, d);
+        monthProfit += c.fundProfit;
+        monthFundSpend += c.fundSpend;
+        monthPoints += c.pointsUsed;
+      }
+
+      return { monthProfit, monthFundSpend, monthPoints, monthNet: monthProfit - monthFundSpend };
+    }
+
+    function renderAccountDayRow(accountId, dayStr, ym, fundBalances) {
+      const d = getRowDisplay(accountId, dayStr, fundBalances);
+      const stats = computeAccountRowStats(accountId, dayStr);
+      const rowClass = [
+        d.isManual ? "day-manual" : "",
+        d.isManual || stats.hasActivity ? "day-has-data" : "day-empty",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      const lastDay = getDaysInMonth(ym).slice(-1)[0];
+      const balanceAttrs = d.fundBalanceAuto
+        ? 'step="0.01" title="自动：前一日结余 + 前一日获利 − 前一日消耗"'
+        : 'step="0.01" title="已手动覆盖"';
+      return `
+        <tr class="${rowClass}" data-day-row="${accountId}|${dayStr}">
+          <td class="cell-editable">${dayCellInput(accountId, dayStr, "date", dayStr, "", "date", `min="${ym}-01" max="${lastDay}"`)}</td>
+          <td class="cell-editable">${dayCellInput(accountId, dayStr, "fundBalance", formatMoneyInput(d.fundBalance), d.fundBalanceAuto ? "balance-auto" : "", "number", balanceAttrs)}</td>
+          <td class="cell-editable">${dayCellInput(accountId, dayStr, "fundDaily", formatMoneyInput(d.fundDaily), "", "number", 'step="0.01" min="0"')}</td>
+          <td class="cell-editable">${dayCellInput(accountId, dayStr, "pointsBalance", formatNumInput(d.pointsBalance), "", "number", 'step="1"')}</td>
+          <td class="cell-editable">${dayCellInput(accountId, dayStr, "pointsDaily", formatNumInput(d.pointsDaily), "", "number", 'step="1" min="0"')}</td>
+          <td class="cell-editable projects-cell">${dayCellInput(accountId, dayStr, "projects", d.projects, "input-projects", "text", 'placeholder="项目名"')}</td>
+          <td class="cell-editable">${dayCellInput(accountId, dayStr, "profitDaily", formatMoneyInput(d.profitDaily), "", "number", 'step="0.01" min="0"')}</td>
+        </tr>
+      `;
+    }
+
+    function renderAccountOpeningRow(accountId) {
+      const acc = getAccount(accountId);
+      const fundOpen = acc?.fundOpen ?? 0;
+      const pointsOpen = acc?.pointsOpen ?? 0;
+      return `
+        <tr class="day-has-data" data-opening-row="${accountId}">
+          <td class="mono">期初</td>
+          <td class="cell-editable">${dayCellInput(accountId, "", "fundOpen", formatMoneyInput(fundOpen), "", "number", 'step="0.01" min="0" data-row="opening"')}</td>
+          <td class="mono">—</td>
+          <td class="cell-editable">${dayCellInput(accountId, "", "pointsOpen", formatNumInput(pointsOpen), "", "number", 'step="1" min="0" data-row="opening"')}</td>
+          <td class="mono">—</td>
+          <td class="projects-cell">—</td>
+          <td class="mono">—</td>
+        </tr>
+      `;
+    }
+
+    function renderAccountList() {
+      const list = document.getElementById("account-list");
+      if (!list) return;
+      if (!state.accounts.length) {
+        list.innerHTML = '<span class="form-hint">暂无账户，请添加或一键创建 24 个。</span>';
+        return;
+      }
+      list.innerHTML = state.accounts
+        .map((a) => {
+          const fundOpen = a.fundOpen ?? 0;
+          const pointsOpen = a.pointsOpen ?? 0;
+          return `
+            <div class="account-tag" data-account-id="${a.id}">
+              <span class="account-tag-head">
+                <strong>${escapeHtml(a.name)}</strong>
+                <span class="account-tag-actions">
+                  <button type="button" class="btn-tag-edit" data-edit-account="${a.id}" title="编辑账户" contenteditable="false">编辑</button>
+                  <button type="button" class="btn-tag-del" data-del-account="${a.id}" title="删除账户" contenteditable="false">×</button>
+                </span>
+              </span>
+              <span class="account-tag-meta">初始 ${fmtMoney(fundOpen)} · 积分 ${pointsOpen.toLocaleString()}</span>
+            </div>
+          `;
+        })
+        .join("");
+      list.querySelectorAll("[data-edit-account]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          openAccountModal(btn.dataset.editAccount);
+        });
+      });
+      list.querySelectorAll("[data-del-account]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.delAccount;
+          if (!confirm(`删除账户「${getAccountName(id)}」？历史记录数据仍保留。`)) return;
+          state.accounts = state.accounts.filter((a) => a.id !== id);
+          hideAccountPreview();
+          save();
+          showToast("已删除账户");
+        });
+      });
+      bindAccountPreview();
+    }
+
+    function renderAccountOverview() {
+      const container = document.getElementById("account-monthly-list");
+      if (!container) return;
+      const ym = accountOverviewMonth || todayISO().slice(0, 7);
+      const days = getDaysInMonth(ym);
+      const monthLabel = ym.replace("-", "年") + "月";
+
+      if (!state.accounts.length) {
+        container.innerHTML = '<p class="empty-state">请先在「账户管理」中添加账户</p>';
+        return;
+      }
+
+      const sorted = [...state.accounts].sort((a, b) => a.name.localeCompare(b.name, "zh"));
+      container.innerHTML = sorted
+        .map((a) => {
+          const tot = computeAccountMonthTotals(a.id, ym);
+          const fundOpen = a.fundOpen ?? 0;
+          const pointsOpen = a.pointsOpen ?? 0;
+          const fundBalances = buildMonthFundBalances(a.id, ym);
+          const dayRows =
+            renderAccountOpeningRow(a.id) + days.map((d) => renderAccountDayRow(a.id, d, ym, fundBalances)).join("");
+          return `
+            <details class="account-month-details" data-account-id="${a.id}">
+              <summary>
+                <span class="acc-summary-name">${escapeHtml(a.name)}</span>
+                <span class="acc-summary-meta">${monthLabel} · 初始资金 ${fmtMoney(fundOpen)} · 期初积分 ${pointsOpen.toLocaleString()} · 月获利 ${fmtMoney(tot.monthProfit)} · 月净 ${fmtMoney(tot.monthNet)}</span>
+                <button type="button" class="btn btn-ghost btn-edit-row" data-edit-account="${a.id}" contenteditable="false">编辑账户</button>
+              </summary>
+              <div class="account-day-table-wrap">
+                <div class="table-scroll">
+                  <table class="account-day-table">
+                    <thead>
+                      <tr>
+                        <th>时期</th>
+                        <th>资金结余</th>
+                        <th>资金当日消耗</th>
+                        <th>积分结余</th>
+                        <th>积分当日消耗</th>
+                        <th>参与项目名称</th>
+                        <th>当日获利</th>
+                      </tr>
+                    </thead>
+                    <tbody>${dayRows}</tbody>
+                  </table>
+                </div>
+              </div>
+            </details>
+          `;
+        })
+        .join("");
+
+      container.querySelectorAll("[data-edit-account]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openAccountModal(btn.dataset.editAccount);
+        });
+      });
+    }
+
+    function initDefaultAccounts(count) {
+      const existing = new Set(state.accounts.map((a) => a.name));
+      for (let i = 1; i <= count; i++) {
+        const name = "账号" + String(i).padStart(2, "0");
+        if (!existing.has(name)) {
+          state.accounts.push({ id: uid(), name, fundOpen: 0, pointsOpen: 0, createdAt: Date.now() });
+        }
+      }
+      save();
+      showToast(`已确保 ${count} 个账户就绪`);
+    }
+
+    function save() {
+      persistState().catch(() => showToast("云端保存失败"));
+      render();
+    }
+
+    function clearFundBalanceOverridesAfter(accountId, ym, dayStr) {
+      const days = getDaysInMonth(ym);
+      const idx = days.indexOf(dayStr);
+      if (idx < 0) return;
+      for (let i = idx + 1; i < days.length; i++) {
+        const rec = getDayManual(accountId, days[i]);
+        if (rec) delete rec.fundBalance;
+      }
+    }
+
+    function refreshFundBalanceCells(accountId, ym) {
+      const map = buildMonthFundBalances(accountId, ym);
+      for (const [d, balance] of map) {
+        const inp = document.querySelector(
+          `input.day-cell-input[data-account="${accountId}"][data-day="${d}"][data-field="fundBalance"]`
+        );
+        if (!inp) continue;
+        const manual = getDayManual(accountId, d);
+        if (manual?.fundBalance != null) {
+          inp.classList.remove("balance-auto");
+          inp.title = "已手动覆盖";
+          continue;
+        }
+        inp.value = formatMoneyInput(balance);
+        inp.classList.add("balance-auto");
+        inp.title = "自动：前一日结余 + 前一日获利 − 前一日消耗";
+      }
+    }
+
+    function refreshAccountSummary(accountId) {
+      const ym = accountOverviewMonth || todayISO().slice(0, 7);
+      const tot = computeAccountMonthTotals(accountId, ym);
+      const acc = getAccount(accountId);
+      if (!acc) return;
+      const monthLabel = ym.replace("-", "年") + "月";
+      const days = getDaysInMonth(ym);
+      const meta = document.querySelector(
+        `details[data-account-id="${accountId}"] .acc-summary-meta`
+      );
+      if (meta) {
+        meta.textContent = `${monthLabel} · 初始资金 ${fmtMoney(acc.fundOpen ?? 0)} · 期初积分 ${(acc.pointsOpen ?? 0).toLocaleString()} · 月获利 ${fmtMoney(tot.monthProfit)} · 月净 ${fmtMoney(tot.monthNet)}`;
+      }
+    }
+
+    function mergeDayManual(accountId, dayStr, data) {
+      let rec = getDayManual(accountId, dayStr);
+      if (!rec) {
+        rec = { id: uid(), type: "day_manual", accountId, date: dayStr };
+        state.records.push(rec);
+      }
+      for (const [k, v] of Object.entries(data)) {
+        if (v === null || v === undefined) delete rec[k];
+        else rec[k] = v;
+      }
+    }
+
+    function saveInlineDayCell(inp) {
+      const accountId = inp.dataset.account;
+      const field = inp.dataset.field;
+      const rowType = inp.dataset.row;
+
+      if (rowType === "opening") {
+        const acc = getAccount(accountId);
+        if (!acc) return;
+        if (field === "fundOpen") acc.fundOpen = parseMoneyInput(inp.value);
+        if (field === "pointsOpen") acc.pointsOpen = parseNumInput(inp.value);
+        persistState();
+        const wasOpen = document.querySelector(`details[data-account-id="${accountId}"]`)?.open;
+        renderAccountOverview();
+        const details = document.querySelector(`details[data-account-id="${accountId}"]`);
+        if (details && wasOpen) details.open = true;
+        showToast("期初数据已保存");
+        return;
+      }
+
+      const dayStr = inp.dataset.day;
+      if (!dayStr) return;
+
+      if (field === "date") {
+        const newDate = inp.value;
+        if (newDate && newDate !== dayStr && newDate.startsWith(accountOverviewMonth || dayStr.slice(0, 7))) {
+          const rec = getDayManual(accountId, dayStr);
+          const display = getRowDisplay(accountId, dayStr);
+          const payload = {
+            fundBalance: display.fundBalance,
+            fundDaily: display.fundDaily,
+            pointsBalance: display.pointsBalance,
+            pointsDaily: display.pointsDaily,
+            projects: display.projects,
+            profitDaily: display.profitDaily,
+          };
+          if (rec) removeDayManual(accountId, dayStr);
+          mergeDayManual(accountId, newDate, payload);
+          persistState();
+          renderAccountOverview();
+          showToast("日期已更新");
+        }
+        return;
+      }
+
+      const patch = {};
+      if (field === "projects") patch.projects = inp.value.trim();
+      else if (field === "fundBalance") {
+        patch.fundBalance = inp.value.trim() === "" ? null : parseMoneyInput(inp.value);
+      } else if (field === "fundDaily") patch.fundDaily = parseMoneyInput(inp.value);
+      else if (field === "profitDaily") patch.profitDaily = parseMoneyInput(inp.value);
+      else if (field === "pointsBalance") patch.pointsBalance = parseNumInput(inp.value);
+      else if (field === "pointsDaily") patch.pointsDaily = parseNumInput(inp.value);
+
+      mergeDayManual(accountId, dayStr, patch);
+      persistState();
+      const tr = inp.closest("tr");
+      if (tr) {
+        tr.classList.add("day-manual", "day-has-data");
+        tr.classList.remove("day-empty");
+      }
+      const ym = accountOverviewMonth || dayStr.slice(0, 7);
+      if (field === "fundDaily" || field === "profitDaily") {
+        clearFundBalanceOverridesAfter(accountId, ym, dayStr);
+        refreshFundBalanceCells(accountId, ym);
+      } else if (field === "fundBalance") {
+        clearFundBalanceOverridesAfter(accountId, ym, dayStr);
+        refreshFundBalanceCells(accountId, ym);
+      }
+      refreshAccountSummary(accountId);
+      showToast("已保存");
+    }
+
+    function bindInlineDayEditors(root) {
+      root.addEventListener("change", (e) => {
+        const inp = e.target.closest(".day-cell-input");
+        if (!inp) return;
+        if (inp.dataset.field === "date") saveInlineDayCell(inp);
+      });
+      root.addEventListener("focusout", (e) => {
+        const inp = e.target.closest(".day-cell-input");
+        if (!inp || inp.dataset.field === "date") return;
+        saveInlineDayCell(inp);
+      });
+    }
+
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    function todayISO() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function fmtMoney(n) {
+      const sign = n < 0 ? "-" : "";
+      const abs = Math.abs(n);
+      return sign + "$" + abs.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function fmtMoneyClass(n) {
+      if (n > 0) return "positive";
+      if (n < 0) return "negative";
+      return "";
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => el.classList.remove("show"), 2400);
+    }
+
+    function wearAmount(r) {
+      if (r.amount != null) return r.amount;
+      if (r.total != null) return r.total;
+      if (r.accounts != null && r.perAccount != null) return r.accounts * r.perAccount;
+      return 0;
+    }
+
+    function isTgeSold(r) {
+      if (r.soldStatus === "sold") return true;
+      if (r.soldStatus === "unsold") return false;
+      if ((r.sold || 0) > 0) return true;
+      if ((r.holding || 0) > 0) return false;
+      return false;
+    }
+
+    function tgeSoldAmount(r) {
+      if (!isTgeSold(r)) return 0;
+      return r.sold || 0;
+    }
+
+    function tgeCost(r) {
+      return (r.cost || 0) + (r.fee || 0);
+    }
+
+    function escapeHtml(s) {
+      const d = document.createElement("div");
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function closeModal() {
+      modalContext = null;
+      document.getElementById("modal-overlay").classList.remove("show");
+    }
+
+    function openModal(title, fieldsHtml, onSave) {
+      document.getElementById("modal-title").textContent = title;
+      document.getElementById("modal-fields").innerHTML = fieldsHtml;
+      modalContext = { onSave };
+      document.getElementById("modal-overlay").classList.add("show");
+    }
+
+    function fieldHtml(id, label, value, opts = {}) {
+      const type = opts.type || "text";
+      const step = opts.step != null ? ` step="${opts.step}"` : "";
+      const min = opts.min != null ? ` min="${opts.min}"` : "";
+      const placeholder = opts.placeholder ? ` placeholder="${opts.placeholder}"` : "";
+      return `
+        <div class="form-row" style="grid-template-columns: 1fr; margin-bottom: 12px;">
+          <div>
+            <label for="${id}">${label}</label>
+            <input type="${type}" id="${id}" value="${escapeHtml(String(value ?? ""))}"${step}${min}${placeholder} contenteditable="false" />
+          </div>
+        </div>
+      `;
+    }
+
+    function openAccountModal(accountId) {
+      const acc = getAccount(accountId);
+      if (!acc) return;
+      const clearBtn = document.getElementById("modal-clear-day");
+      if (clearBtn) clearBtn.remove();
+      openModal(
+        `编辑账户 · ${acc.name}`,
+        fieldHtml("edit-acc-name", "账户名称", acc.name) +
+          fieldHtml("edit-acc-fund", "初始资金 ($)", acc.fundOpen ?? 0, { type: "number", step: "0.01", min: "0" }) +
+          fieldHtml("edit-acc-points", "期初积分", acc.pointsOpen ?? 0, { type: "number", step: "1", min: "0" }),
+        () => {
+          const name = document.getElementById("edit-acc-name").value.trim();
+          if (!name) {
+            showToast("账户名称不能为空");
+            return false;
+          }
+          if (state.accounts.some((a) => a.id !== accountId && a.name === name)) {
+            showToast("账户名称已存在");
+            return false;
+          }
+          acc.name = name;
+          acc.fundOpen = Number(document.getElementById("edit-acc-fund").value) || 0;
+          acc.pointsOpen = Number(document.getElementById("edit-acc-points").value) || 0;
+          save();
+          showToast("账户已更新");
+          return true;
+        }
+      );
+    }
+
+    function removeDayManual(accountId, dayStr) {
+      state.records = state.records.filter(
+        (r) => !(r.type === "day_manual" && recordAccountId(r) === accountId && r.date === dayStr)
+      );
+    }
+
+    function render() {
+      renderGlobalStats();
+      renderAccountList();
+      renderAccountOverview();
+    }
+
+    document.getElementById("btn-add-account").addEventListener("click", () => {
+      const name = document.getElementById("new-account-name").value.trim();
+      if (!name) {
+        showToast("请输入账户名称");
+        return;
+      }
+      if (state.accounts.some((a) => a.name === name)) {
+        showToast("账户名称已存在");
+        return;
+      }
+      const fundOpen = Number(document.getElementById("new-account-fund").value) || 0;
+      const pointsOpen = Number(document.getElementById("new-account-points").value) || 0;
+      const acc = { id: uid(), name, fundOpen, pointsOpen, createdAt: Date.now() };
+      state.accounts.push(acc);
+      document.getElementById("new-account-name").value = "";
+      document.getElementById("new-account-fund").value = "";
+      document.getElementById("new-account-points").value = "";
+      save();
+      showToast(`已添加 ${name}`);
+    });
+
+    document.getElementById("btn-init-accounts").addEventListener("click", () => {
+      if (state.accounts.length && !confirm("将补全账号01–24（已有同名则跳过），继续？")) return;
+      initDefaultAccounts(24);
+    });
+
+    document.getElementById("account-overview-month").addEventListener("change", (e) => {
+      accountOverviewMonth = e.target.value || todayISO().slice(0, 7);
+      renderAccountOverview();
+    });
+
+    document.getElementById("btn-expand-all-accounts").addEventListener("click", () => {
+      document.querySelectorAll(".account-month-details").forEach((el) => {
+        el.open = true;
+      });
+    });
+
+    document.getElementById("btn-collapse-all-accounts").addEventListener("click", () => {
+      document.querySelectorAll(".account-month-details").forEach((el) => {
+        el.open = false;
+      });
+    });
+
+    document.getElementById("btn-edit").addEventListener("click", () => {
+      const main = document.getElementById("main-content");
+      const on = main.getAttribute("contenteditable") === "true";
+      main.setAttribute("contenteditable", on ? "false" : "true");
+      document.body.classList.toggle("edit-mode", !on);
+      document.getElementById("btn-edit").textContent = on ? "编辑文字" : "完成编辑";
+    });
+
+    document.getElementById("btn-export").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "binance-alpha-stats-" + todayISO() + ".json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast("已导出 JSON");
+    });
+
+    document.getElementById("btn-download").addEventListener("click", () => {
+      const html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "binance-alpha-stats.html";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast("已下载 HTML（数据在浏览器 localStorage）");
+    });
+
+    document.getElementById("modal-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (modalContext?.onSave?.() !== false) closeModal();
+    });
+    document.getElementById("modal-cancel").addEventListener("click", closeModal);
+    document.getElementById("modal-overlay").addEventListener("click", (e) => {
+      if (e.target.id === "modal-overlay") closeModal();
+    });
+
+    document.getElementById("btn-reset").addEventListener("click", () => {
+      if (!confirm("确定清空全部本地数据？此操作不可恢复。")) return;
+      state = { accounts: [], records: [] };
+      save();
+      showToast("数据已清空");
+    });
+
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const password = document.getElementById("login-password").value;
+      const errEl = document.getElementById("login-error");
+      errEl.textContent = "";
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password }),
+          credentials: "include",
+        });
+        if (!res.ok) {
+          errEl.textContent = "密码错误，请重试";
+          return;
+        }
+        useCloudApi = true;
+        await loadFromCloud();
+        hideLogin();
+        if (!state.accounts.length) initDefaultAccounts(24);
+        else render();
+        showToast("登录成功");
+      } catch {
+        errEl.textContent = "无法连接服务器";
+      }
+    });
+
+    document.getElementById("btn-logout").addEventListener("click", async () => {
+      try {
+        await fetch("/api/logout", { method: "POST", credentials: "include" });
+      } catch (_) {}
+      useCloudApi = false;
+      showLogin();
+      document.getElementById("login-password").value = "";
+    });
+
+    async function bootstrap() {
+      const iso = todayISO();
+      accountOverviewMonth = iso.slice(0, 7);
+      document.getElementById("account-overview-month").value = accountOverviewMonth;
+      bindInlineDayEditors(document.getElementById("account-monthly-list"));
+      bindAccountPreview();
+
+      try {
+        const probe = await fetch("/api/data", { credentials: "include" });
+        if (probe.status === 401) {
+          showLogin();
+          return;
+        }
+        if (probe.ok) {
+          useCloudApi = true;
+          applyState(await probe.json());
+          hideLogin();
+          if (!state.accounts.length) initDefaultAccounts(24);
+          else render();
+          return;
+        }
+      } catch (_) {}
+
+      loadLocal();
+      hideLogin();
+      if (!state.accounts.length) initDefaultAccounts(24);
+      else render();
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>
