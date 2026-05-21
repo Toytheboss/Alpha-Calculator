@@ -33,11 +33,23 @@ npx wrangler pages secret put SESSION_SECRET --project-name=alpha-calculator
 
 `SESSION_SECRET` 建议使用 32 位以上随机字符串。
 
+## 线上地址
+
+- **生产环境**：<https://alpha-calculator.pages.dev>
+- 首次访问需输入管理密码（见部署时设置的 `ADMIN_PASSWORD`）
+
 ## GitHub
 
 仓库：<https://github.com/Toytheboss/Alpha-Calculator>
 
-在 Cloudflare Dashboard → Workers & Pages → alpha-calculator → Settings → Builds 中连接该 GitHub 仓库，构建命令留空，输出目录为 `/`。
+可选：在 Cloudflare Dashboard → Workers & Pages → alpha-calculator → Settings → Builds 连接 GitHub 实现推送后自动部署（输出目录 `/`，无需构建命令）。
+
+## 修改管理密码
+
+```bash
+npx wrangler pages secret put ADMIN_PASSWORD --project-name=alpha-calculator
+npx wrangler pages deploy . --project-name=alpha-calculator
+```
 
 ## 安全说明
 
