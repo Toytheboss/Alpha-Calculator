@@ -633,59 +633,6 @@
       background: rgba(154, 115, 73, 0.06);
     }
 
-    .global-stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-      margin-bottom: 28px;
-    }
-    @media (max-width: 900px) {
-      .global-stats { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 480px) {
-      .global-stats { grid-template-columns: 1fr; }
-    }
-    .global-stat-card {
-      background: var(--surface-solid);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px 20px;
-      box-shadow: var(--shadow);
-      transition: border-color var(--transition), box-shadow var(--transition);
-    }
-    .global-stat-card:hover {
-      border-color: var(--border-hover);
-      box-shadow: var(--shadow-lg);
-    }
-    .global-stat-card .label {
-      font-size: 0.68rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-    .global-stat-card .value {
-      font-family: "JetBrains Mono", monospace;
-      font-size: 1.35rem;
-      font-weight: 600;
-      line-height: 1.2;
-    }
-    .global-stat-card .hint {
-      font-size: 0.68rem;
-      color: var(--muted);
-      margin-top: 8px;
-    }
-    .global-stat-card.accent-invest { border-top: 3px solid var(--blue); }
-    .global-stat-card.accent-wear { border-top: 3px solid var(--red); }
-    .global-stat-card.accent-profit { border-top: 3px solid var(--green); }
-    .global-stat-card.accent-balance { border-top: 3px solid var(--primary); }
-    .global-stat-card.accent-profit .value { color: var(--green); }
-    .global-stat-card.accent-wear .value { color: var(--red); }
-    .global-stat-card.accent-balance .value { color: var(--primary); }
-    .global-stat-card.negative-profit .value { color: var(--red); }
-    .global-stat-card.negative-balance .value { color: var(--red); }
-
     .login-screen {
       position: fixed;
       inset: 0;
@@ -758,6 +705,7 @@
       <div class="toolbar">
         <span class="edit-hint">编辑模式：点击文字可改标题说明</span>
         <button type="button" class="btn btn-ghost" id="btn-edit" contenteditable="false">编辑文字</button>
+        <a class="btn btn-ghost" href="/visitor.html" contenteditable="false">访客视图</a>
         <button type="button" class="btn btn-ghost" id="btn-export" contenteditable="false">
           <span>导出 JSON</span>
         </button>
@@ -768,13 +716,6 @@
     </header>
 
     <main id="main-content">
-      <div class="section-head">
-        <span class="section-title">总览</span>
-        <span class="section-line"></span>
-      </div>
-
-      <div class="global-stats" id="global-stats" contenteditable="false"></div>
-
       <div class="section-head">
         <span class="section-title">账户管理</span>
         <span class="section-line"></span>
@@ -1167,86 +1108,6 @@
         }
       }
       return dates;
-    }
-
-    function computeAccountWearTotal(accountId) {
-      let total = 0;
-      const wearDays = new Set();
-
-      for (const r of state.records) {
-        if (recordAccountId(r) !== accountId) continue;
-        if (r.type === "wear") {
-          total += wearAmount(r);
-          if (r.date) wearDays.add(r.date);
-        }
-      }
-
-      for (const r of state.records) {
-        if (recordAccountId(r) !== accountId) continue;
-        if (r.type !== "day_manual" || r.fundDaily == null) continue;
-        if (r.date && wearDays.has(r.date)) continue;
-        total += Number(r.fundDaily) || 0;
-      }
-
-      return total;
-    }
-
-    function computeGlobalStats() {
-      let totalInvest = 0;
-      let totalWear = 0;
-      let totalProfit = 0;
-      let totalBalance = 0;
-      const accountCount = state.accounts.length;
-
-      for (const acc of state.accounts) {
-        totalInvest += acc.fundOpen ?? 0;
-        totalWear += computeAccountWearTotal(acc.id);
-        const s = computeAccountLifetimeStats(acc.id);
-        totalProfit += s.totalProfit;
-        totalBalance += s.endBalance;
-      }
-
-      const netProfit = totalProfit - totalWear;
-
-      return {
-        totalInvest,
-        totalWear,
-        totalProfit,
-        totalBalance,
-        netProfit,
-        accountCount,
-      };
-    }
-
-    function renderGlobalStats() {
-      const el = document.getElementById("global-stats");
-      if (!el) return;
-      const g = computeGlobalStats();
-      const profitClass = g.totalProfit < 0 ? " negative-profit" : "";
-      const balanceClass = g.totalBalance < g.totalInvest ? " negative-balance" : "";
-
-      el.innerHTML = `
-        <div class="global-stat-card accent-invest">
-          <div class="label">总投入</div>
-          <div class="value">${fmtMoney(g.totalInvest)}</div>
-          <div class="hint">${g.accountCount} 个账户期初资金合计</div>
-        </div>
-        <div class="global-stat-card accent-wear">
-          <div class="label">总磨损</div>
-          <div class="value">${fmtMoney(g.totalWear)}</div>
-          <div class="hint">刷号及当日资金消耗累计</div>
-        </div>
-        <div class="global-stat-card accent-profit${profitClass}">
-          <div class="label">总获利</div>
-          <div class="value">${fmtMoney(g.totalProfit)}</div>
-          <div class="hint">空投 / TGE 等收益合计</div>
-        </div>
-        <div class="global-stat-card accent-balance${balanceClass}">
-          <div class="label">总余额</div>
-          <div class="value">${fmtMoney(g.totalBalance)}</div>
-          <div class="hint">各账户当前资金余额合计 · 净盈亏 ${fmtMoney(g.netProfit)}</div>
-        </div>
-      `;
     }
 
     function computeAccountLifetimeStats(accountId) {
@@ -1839,7 +1700,6 @@
     }
 
     function render() {
-      renderGlobalStats();
       renderAccountList();
       renderAccountOverview();
     }

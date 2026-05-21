@@ -2,7 +2,7 @@ import { getSessionCookie, verifySessionToken } from "./utils/auth.js";
 
 export async function onRequest(context) {
   const url = new URL(context.request.url);
-  if (url.pathname === "/api/login") {
+  if (url.pathname === "/api/login" || url.pathname === "/api/public-data") {
     return context.next();
   }
   if (!url.pathname.startsWith("/api/")) {

@@ -35,8 +35,8 @@ npx wrangler pages secret put SESSION_SECRET --project-name=alpha-calculator
 
 ## 线上地址
 
-- **生产环境**：<https://alpha-calculator.pages.dev>
-- 首次访问需输入管理密码（见部署时设置的 `ADMIN_PASSWORD`）
+- **管理后台**：<https://alpha-calculator.pages.dev>（需管理密码）
+- **访客视图**：<https://alpha-calculator.pages.dev/visitor.html>（只读，无需登录）
 
 ## GitHub
 
