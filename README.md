@@ -36,7 +36,8 @@ npx wrangler pages secret put SESSION_SECRET --project-name=alpha-calculator
 ## 线上地址
 
 - **管理后台**：<https://alpha-calculator.pages.dev>（需管理密码）
-- **访客视图**：<https://alpha-calculator.pages.dev/visitor.html>（只读，无需登录）
+- **访客视图**：<https://alpha-calculator.pages.dev/visitor.html>（只读，查看全部账户）
+- **单账户分享**：管理端点击账户「分享」生成链接，形如 `/share.html?token=...`（仅含该账户，可导出 PNG）
 
 ## GitHub
 

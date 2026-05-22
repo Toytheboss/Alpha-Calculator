@@ -493,6 +493,42 @@
       font-size: 0.85rem;
     }
     .account-tag .btn-tag-del:hover { background: var(--red-dim); }
+    .account-tag .btn-tag-share {
+      color: var(--blue);
+    }
+    .account-tag .btn-tag-share:hover { background: var(--blue-dim); }
+
+    .share-url-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .share-url-row input {
+      flex: 1;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.78rem;
+    }
+    .share-preview-wrap {
+      max-height: 420px;
+      overflow: auto;
+      margin: 12px 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+    .share-card-export {
+      background: #fffdf9;
+      padding: 16px;
+    }
+    .share-card-export h4 {
+      font-family: Sora, sans-serif;
+      margin-bottom: 8px;
+    }
+    .share-card-export .meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: "JetBrains Mono", monospace;
+      margin-bottom: 12px;
+    }
 
     .btn-edit-row {
       font-size: 0.7rem;
@@ -773,6 +809,26 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <div class="modal-overlay" id="share-modal-overlay" contenteditable="false">
+    <div class="modal" style="max-width: 720px" role="dialog" aria-modal="true">
+      <h3>卡片分享 · <span id="share-modal-title">账户</span></h3>
+      <p class="form-hint" style="margin-top: 0">仅包含该账户数据。重新生成将使旧链接失效。</p>
+      <div class="share-url-row">
+        <input type="text" id="share-url-input" readonly contenteditable="false" />
+        <button type="button" class="btn btn-primary" id="btn-copy-share" contenteditable="false">复制链接</button>
+      </div>
+      <div class="share-preview-wrap">
+        <div id="share-card-export" class="share-card-export"></div>
+      </div>
+      <div class="modal-actions" style="justify-content: flex-start; flex-wrap: wrap">
+        <button type="button" class="btn btn-cta" id="btn-export-share-png" contenteditable="false">导出图片</button>
+        <a class="btn btn-ghost" id="btn-open-share-page" href="#" target="_blank" rel="noopener" contenteditable="false">打开分享页</a>
+        <button type="button" class="btn btn-danger" id="btn-revoke-share" contenteditable="false">撤销分享</button>
+        <button type="button" class="btn btn-ghost" id="btn-close-share" contenteditable="false">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="modal-overlay" contenteditable="false">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <h3 id="modal-title">编辑</h3>
@@ -786,6 +842,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
     const STORAGE_KEY = "binance-alpha-stats-v2";
 
@@ -793,6 +850,8 @@
     let accountOverviewMonth = "";
     let modalContext = null;
     let useCloudApi = false;
+    let shareModalAccountId = null;
+    let shareModalUrl = "";
 
     function normalizeState() {
       if (!Array.isArray(state.records)) state.records = [];
@@ -1331,6 +1390,7 @@
               <span class="account-tag-head">
                 <strong>${escapeHtml(a.name)}</strong>
                 <span class="account-tag-actions">
+                  <button type="button" class="btn-tag-share" data-share-account="${a.id}" title="卡片分享" contenteditable="false">分享</button>
                   <button type="button" class="btn-tag-edit" data-edit-account="${a.id}" title="编辑账户" contenteditable="false">编辑</button>
                   <button type="button" class="btn-tag-del" data-del-account="${a.id}" title="删除账户" contenteditable="false">×</button>
                 </span>
@@ -1340,6 +1400,12 @@
           `;
         })
         .join("");
+      list.querySelectorAll("[data-share-account]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          openShareModal(btn.dataset.shareAccount);
+        });
+      });
       list.querySelectorAll("[data-edit-account]").forEach((btn) => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -1386,6 +1452,7 @@
               <summary>
                 <span class="acc-summary-name">${escapeHtml(a.name)}</span>
                 <span class="acc-summary-meta">${monthLabel} · 初始资金 ${fmtMoney(fundOpen)} · 期初积分 ${pointsOpen.toLocaleString()} · 月获利 ${fmtMoney(tot.monthProfit)} · 月净 ${fmtMoney(tot.monthNet)}</span>
+                <button type="button" class="btn btn-ghost btn-edit-row" data-share-account="${a.id}" contenteditable="false">分享</button>
                 <button type="button" class="btn btn-ghost btn-edit-row" data-edit-account="${a.id}" contenteditable="false">编辑账户</button>
               </summary>
               <div class="account-day-table-wrap">
@@ -1411,6 +1478,13 @@
         })
         .join("");
 
+      container.querySelectorAll("[data-share-account]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openShareModal(btn.dataset.shareAccount);
+        });
+      });
       container.querySelectorAll("[data-edit-account]").forEach((btn) => {
         btn.addEventListener("click", (e) => {
           e.preventDefault();
@@ -1418,6 +1492,121 @@
           openAccountModal(btn.dataset.editAccount);
         });
       });
+    }
+
+    function renderShareCardExportHtml(accountId, ym) {
+      const acc = getAccount(accountId);
+      if (!acc) return "";
+      const days = getDaysInMonth(ym);
+      const monthLabel = ym.replace("-", "年") + "月";
+      const tot = computeAccountMonthTotals(accountId, ym);
+      const life = computeAccountLifetimeStats(accountId, ym);
+      const fundBalances = buildMonthFundBalances(accountId, ym);
+
+      const fmtRow = (dayStr) => {
+        const d = getRowDisplay(accountId, dayStr, fundBalances);
+        const projects = d.projects ? escapeHtml(String(d.projects)) : "—";
+        return `<tr>
+          <td>${formatDayLabel(dayStr)}</td>
+          <td class="mono">${fmtMoney(d.fundBalance)}</td>
+          <td class="mono">${d.fundDaily ? fmtMoney(d.fundDaily) : "—"}</td>
+          <td class="mono">${d.pointsBalance.toLocaleString()}</td>
+          <td class="mono">${d.pointsDaily ? d.pointsDaily.toLocaleString() : "—"}</td>
+          <td>${projects}</td>
+          <td class="mono">${d.profitDaily ? fmtMoney(d.profitDaily) : "—"}</td>
+        </tr>`;
+      };
+
+      const opening = `<tr>
+        <td>期初</td>
+        <td class="mono">${fmtMoney(acc.fundOpen ?? 0)}</td>
+        <td>—</td>
+        <td class="mono">${(acc.pointsOpen ?? 0).toLocaleString()}</td>
+        <td>—</td>
+        <td>—</td>
+        <td>—</td>
+      </tr>`;
+
+      return `
+        <h4>${escapeHtml(acc.name)}</h4>
+        <p class="meta">${monthLabel} · 月获利 ${fmtMoney(tot.monthProfit)} · 月净 ${fmtMoney(tot.monthNet)} · 累计净盈亏 ${fmtMoney(life.netProfit)}</p>
+        <table class="account-day-table" style="width:100%;font-size:0.75rem">
+          <thead><tr>
+            <th>时期</th><th>资金结余</th><th>资金当日消耗</th><th>积分结余</th><th>积分当日消耗</th><th>参与项目</th><th>当日获利</th>
+          </tr></thead>
+          <tbody>${opening}${days.map(fmtRow).join("")}</tbody>
+        </table>
+      `;
+    }
+
+    async function openShareModal(accountId) {
+      if (!useCloudApi) {
+        showToast("请先登录管理端");
+        return;
+      }
+      const acc = getAccount(accountId);
+      if (!acc) return;
+      shareModalAccountId = accountId;
+      const ym = accountOverviewMonth || todayISO().slice(0, 7);
+      document.getElementById("share-modal-title").textContent = acc.name;
+      document.getElementById("share-card-export").innerHTML = renderShareCardExportHtml(accountId, ym);
+
+      try {
+        const res = await fetch("/api/share", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accountId }),
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("create failed");
+        const data = await res.json();
+        shareModalUrl = data.shareUrl;
+        document.getElementById("share-url-input").value = shareModalUrl;
+        document.getElementById("btn-open-share-page").href = shareModalUrl;
+        document.getElementById("share-modal-overlay").classList.add("show");
+      } catch {
+        showToast("生成分享链接失败");
+      }
+    }
+
+    function closeShareModal() {
+      document.getElementById("share-modal-overlay").classList.remove("show");
+    }
+
+    async function revokeShareLink() {
+      if (!shareModalUrl) return closeShareModal();
+      const token = new URL(shareModalUrl).searchParams.get("token");
+      if (!token) return closeShareModal();
+      try {
+        await fetch("/api/share?token=" + encodeURIComponent(token), {
+          method: "DELETE",
+          credentials: "include",
+        });
+        showToast("已撤销分享");
+      } catch {
+        showToast("撤销失败");
+      }
+      closeShareModal();
+    }
+
+    async function exportShareCardPng() {
+      const el = document.getElementById("share-card-export");
+      if (!el || typeof html2canvas !== "function") {
+        showToast("无法导出");
+        return;
+      }
+      try {
+        const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#fffdf9", useCORS: true });
+        const acc = getAccount(shareModalAccountId);
+        const ym = accountOverviewMonth || todayISO().slice(0, 7);
+        const a = document.createElement("a");
+        a.download = (acc ? acc.name : "share") + "-" + ym + ".png";
+        a.href = canvas.toDataURL("image/png");
+        a.click();
+        showToast("图片已下载");
+      } catch {
+        showToast("导出失败");
+      }
     }
 
     function initDefaultAccounts(count) {
@@ -1781,6 +1970,23 @@
       if (modalContext?.onSave?.() !== false) closeModal();
     });
     document.getElementById("modal-cancel").addEventListener("click", closeModal);
+    document.getElementById("btn-copy-share").addEventListener("click", async () => {
+      const url = document.getElementById("share-url-input").value;
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast("链接已复制");
+      } catch {
+        document.getElementById("share-url-input").select();
+        showToast("请手动复制链接");
+      }
+    });
+    document.getElementById("btn-export-share-png").addEventListener("click", exportShareCardPng);
+    document.getElementById("btn-revoke-share").addEventListener("click", revokeShareLink);
+    document.getElementById("btn-close-share").addEventListener("click", closeShareModal);
+    document.getElementById("share-modal-overlay").addEventListener("click", (e) => {
+      if (e.target.id === "share-modal-overlay") closeShareModal();
+    });
+
     document.getElementById("modal-overlay").addEventListener("click", (e) => {
       if (e.target.id === "modal-overlay") closeModal();
     });

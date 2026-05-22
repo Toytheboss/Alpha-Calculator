@@ -5,6 +5,9 @@ export async function onRequest(context) {
   if (url.pathname === "/api/login" || url.pathname === "/api/public-data") {
     return context.next();
   }
+  if (url.pathname.startsWith("/api/share/") && context.request.method === "GET") {
+    return context.next();
+  }
   if (!url.pathname.startsWith("/api/")) {
     return context.next();
   }

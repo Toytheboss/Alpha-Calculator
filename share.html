@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Binance Alpha 统计 · 账户分享</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f7f2eb;
+      --bg-elevated: #fffdf9;
+      --surface: rgba(255, 253, 248, 0.95);
+      --surface-solid: #fffdf9;
+      --surface2: #f3ece2;
+      --border: rgba(160, 120, 80, 0.2);
+      --border-hover: rgba(140, 100, 60, 0.35);
+      --text: #3d3428;
+      --muted: #8b7355;
+      --primary: #d97706;
+      --primary-light: #f59e0b;
+      --primary-dim: rgba(217, 119, 6, 0.12);
+      --cta: #c2410c;
+      --cta-light: #ea580c;
+      --cta-dim: rgba(194, 65, 12, 0.1);
+      --green: #4d7a46;
+      --green-dim: rgba(77, 122, 70, 0.12);
+      --red: #c45c3e;
+      --red-dim: rgba(196, 92, 62, 0.1);
+      --blue: #9a7349;
+      --blue-dim: rgba(154, 115, 73, 0.12);
+      --purple: #a16207;
+      --purple-dim: rgba(161, 98, 7, 0.1);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow: 0 4px 20px rgba(120, 80, 40, 0.08);
+      --shadow-lg: 0 8px 32px rgba(120, 80, 40, 0.12);
+      --glow-warm: 0 4px 16px rgba(217, 119, 6, 0.15);
+      --glow-cta: 0 4px 14px rgba(194, 65, 12, 0.12);
+      --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.55;
+      font-weight: 400;
+      color-scheme: light;
+    }
+
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(180, 140, 100, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(180, 140, 100, 0.06) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black, transparent 80%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bg-glow {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 0% 0%, rgba(253, 230, 180, 0.5), transparent 50%),
+        radial-gradient(ellipse 60% 45% at 100% 10%, rgba(255, 237, 213, 0.45), transparent 50%),
+        radial-gradient(ellipse 50% 40% at 50% 100%, rgba(245, 230, 210, 0.35), transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px 56px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 0 -24px 32px;
+      padding: 18px 24px;
+      background: rgba(255, 253, 248, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-icon {
+      width: 44px; height: 44px;
+      background: #000;
+      border-radius: 12px;
+      display: grid; place-items: center;
+      box-shadow: var(--glow-warm);
+      flex-shrink: 0;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+    }
+    .brand-icon img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      display: block;
+    }
+    .brand h1 {
+      font-family: Sora, sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--text);
+    }
+    .brand p { font-size: 0.78rem; color: var(--muted); margin-top: 3px; font-weight: 400; }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+    .last-updated {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-family: "JetBrains Mono", monospace;
+      white-space: nowrap;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 9px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      transition: background var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+    .btn:hover {
+      background: #ebe3d6;
+      border-color: var(--border-hover);
+    }
+    .btn:focus-visible {
+      outline: 2px solid var(--cta);
+      outline-offset: 2px;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: #fffdf9;
+      border-color: transparent;
+      font-weight: 600;
+      box-shadow: var(--glow-warm);
+    }
+    .btn-primary:hover:not(:disabled) {
+      filter: brightness(1.05);
+      box-shadow: 0 4px 20px rgba(217, 119, 6, 0.28);
+    }
+    .btn-ghost { background: transparent; color: var(--text); }
+
+    .data-banner {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 20px;
+      font-size: 0.85rem;
+      border: 1px solid var(--border);
+    }
+    .data-banner[hidden] { display: none !important; }
+    .data-banner.loading {
+      background: var(--blue-dim);
+      color: var(--blue);
+    }
+    .data-banner.error {
+      background: var(--red-dim);
+      color: var(--red);
+      border-color: rgba(196, 92, 62, 0.35);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-family: Sora, sans-serif;
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+    }
+    .section-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+
+    .panel {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      transition: border-color var(--transition);
+      margin-bottom: 24px;
+    }
+    .panel:hover { border-color: var(--border-hover); }
+
+    .panel h2 {
+      font-family: Sora, sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel h2 .panel-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--panel-accent, var(--primary));
+      box-shadow: 0 0 10px var(--panel-accent, var(--primary));
+    }
+
+    .form-hint {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0;
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    input[type="month"] {
+      width: 100%;
+      font-family: inherit;
+      font-size: 0.875rem;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: #fffdf9;
+      color: var(--text);
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    input[type="month"]:hover { border-color: var(--border-hover); }
+    input[type="month"]:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-dim);
+    }
+
+    .global-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    @media (max-width: 900px) {
+      .global-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      .global-stats { grid-template-columns: 1fr; }
+    }
+    .global-stat-card {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .global-stat-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: var(--shadow-lg);
+    }
+    .global-stat-card .label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .global-stat-card .value {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 1.35rem;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .global-stat-card .hint {
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+    .global-stat-card.accent-invest { border-top: 3px solid var(--blue); }
+    .global-stat-card.accent-wear { border-top: 3px solid var(--red); }
+    .global-stat-card.accent-profit { border-top: 3px solid var(--green); }
+    .global-stat-card.accent-balance { border-top: 3px solid var(--primary); }
+    .global-stat-card.accent-profit .value { color: var(--green); }
+    .global-stat-card.accent-wear .value { color: var(--red); }
+    .global-stat-card.accent-balance .value { color: var(--primary); }
+    .global-stat-card.negative-profit .value { color: var(--red); }
+    .global-stat-card.negative-balance .value { color: var(--red); }
+
+    .account-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+    .account-tag {
+      font-size: 0.75rem;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #f3ece2;
+      border: 1px solid var(--border);
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      min-width: 140px;
+      cursor: default;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .account-tag:hover,
+    .account-tag.preview-active {
+      border-color: rgba(217, 119, 6, 0.45);
+      box-shadow: var(--shadow);
+    }
+    .account-tag-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+    }
+    .account-tag-meta {
+      font-size: 0.68rem;
+      color: var(--muted);
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    .account-preview {
+      position: fixed;
+      z-index: 120;
+      width: 272px;
+      padding: 14px 16px;
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg);
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(8px);
+      transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+    }
+    .account-preview.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    .account-preview-head {
+      font-family: Sora, sans-serif;
+      font-weight: 600;
+      font-size: 0.88rem;
+      margin-bottom: 4px;
+    }
+    .account-preview-sub {
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .account-preview-hero {
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      background: #f3ece2;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .account-preview-hero.positive { background: var(--green-dim); }
+    .account-preview-hero.negative { background: var(--red-dim); }
+    .account-preview-hero .label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .account-preview-hero .value {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .account-preview-hero.positive .value { color: var(--green); }
+    .account-preview-hero.negative .value { color: var(--red); }
+    .account-preview-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .account-preview-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      gap: 12px;
+    }
+    .account-preview-list .k { color: var(--muted); }
+    .account-preview-list .v {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .account-overview-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: flex-end;
+      margin-bottom: 16px;
+    }
+    .account-overview-bar > div { min-width: 160px; }
+    .account-monthly-list { display: flex; flex-direction: column; gap: 10px; }
+    .account-month-details {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: #fffdf9;
+      overflow: hidden;
+    }
+    .account-month-details[open] {
+      border-color: rgba(217, 119, 6, 0.35);
+      box-shadow: var(--shadow);
+    }
+    .account-month-details > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-weight: 500;
+      transition: background var(--transition);
+    }
+    .account-month-details > summary::-webkit-details-marker { display: none; }
+    .account-month-details > summary::before {
+      content: "▶";
+      font-size: 0.65rem;
+      color: var(--primary);
+      margin-right: 10px;
+      transition: transform var(--transition);
+    }
+    .account-month-details[open] > summary::before {
+      transform: rotate(90deg);
+    }
+    .account-month-details > summary:hover { background: #fef9ee; }
+    .acc-summary-name {
+      font-family: Sora, sans-serif;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .acc-summary-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: "JetBrains Mono", monospace;
+    }
+    .account-day-table-wrap {
+      padding: 0 12px 12px;
+      border-top: 1px solid var(--border);
+    }
+    .table-scroll {
+      overflow-x: auto;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+    th, td {
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      font-family: Sora, sans-serif;
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      background: #f3ece2;
+    }
+    tbody tr { transition: background var(--transition); }
+    tbody tr:hover td { background: rgba(217, 119, 6, 0.06); }
+    tbody tr:last-child td { border-bottom: none; }
+    .account-day-table th:first-child,
+    .account-day-table td:first-child {
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .account-day-table td.projects-cell {
+      max-width: 180px;
+      font-size: 0.78rem;
+      line-height: 1.4;
+    }
+    .account-day-table tr.day-empty td { color: var(--muted); opacity: 0.65; }
+    .account-day-table tr.day-has-data { background: rgba(217, 119, 6, 0.04); }
+    .account-day-table tr.day-manual { background: rgba(217, 119, 6, 0.07); }
+    .account-day-table td.balance-auto { color: var(--blue); }
+
+    .mono { font-family: "JetBrains Mono", monospace; font-size: 0.8rem; }
+    .amount-pos { color: var(--green); font-weight: 500; }
+    .amount-neg { color: var(--red); font-weight: 500; }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+    .share-card-wrap {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    .share-card-head {
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .share-card-head h2 {
+      font-family: Sora, sans-serif;
+      font-size: 1.2rem;
+      margin-bottom: 8px;
+    }
+    .share-card-meta {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-family: "JetBrains Mono", monospace;
+    }
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      padding: 14px 20px;
+      background: #fffdf9;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--primary);
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 100;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    .share-badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: var(--primary-dim);
+      color: var(--primary);
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon" title="Binance">
+          <img src="Binance_Logo.svg.png" alt="Binance" width="28" height="28" />
+        </div>
+        <div>
+          <h1>BINANCE ALPHA</h1>
+          <p>账户分享 · 只读</p>
+        </div>
+      </div>
+      <div class="toolbar">
+        <span class="last-updated" id="last-updated">尚未加载</span>
+        <button type="button" class="btn btn-primary" id="btn-export-png">导出图片</button>
+        <button type="button" class="btn btn-ghost" id="btn-refresh">刷新</button>
+      </div>
+    </header>
+
+    <div class="data-banner loading" id="data-banner" hidden aria-live="polite"></div>
+
+    <main id="main-content">
+      <div class="account-overview-bar" style="margin-bottom: 16px">
+        <div>
+          <label for="account-overview-month">统计月份</label>
+          <input type="month" id="account-overview-month" />
+        </div>
+      </div>
+      <div id="share-card" class="share-card-wrap"></div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    let state = { accounts: [], records: [] };
+    let accountOverviewMonth = "";
+    let lastFetchedAt = null;
+    let autoRefreshTimer = null;
+    let loadInFlight = false;
+
+    function normalizeState() {
+      if (!Array.isArray(state.records)) state.records = [];
+      if (!Array.isArray(state.accounts)) state.accounts = [];
+      for (const a of state.accounts) {
+        if (a.fundOpen == null) a.fundOpen = 0;
+        if (a.pointsOpen == null) a.pointsOpen = 0;
+      }
+      migrateRecordsToAccounts();
+    }
+
+    function applyState(data) {
+      state = data && typeof data === "object" ? data : { accounts: [], records: [] };
+      normalizeState();
+    }
+
+    function migrateRecordsToAccounts() {
+      for (const r of state.records) {
+        if (r.accountId) continue;
+        if (r.account) {
+          let acc = state.accounts.find((a) => a.name === r.account);
+          if (!acc) {
+            acc = { id: uid(), name: r.account, createdAt: Date.now() };
+            state.accounts.push(acc);
+          }
+          r.accountId = acc.id;
+        }
+      }
+    }
+
+    function getAccount(id) {
+      return state.accounts.find((a) => a.id === id);
+    }
+
+    function recordAccountId(r) {
+      if (r.accountId) return r.accountId;
+      if (r.account) {
+        const acc = state.accounts.find((a) => a.name === r.account);
+        return acc ? acc.id : null;
+      }
+      return null;
+    }
+
+    function getDaysInMonth(ym) {
+      const [y, m] = ym.split("-").map(Number);
+      const count = new Date(y, m, 0).getDate();
+      const days = [];
+      for (let d = 1; d <= count; d++) {
+        days.push(`${ym}-${String(d).padStart(2, "0")}`);
+      }
+      return days;
+    }
+
+    function formatDayLabel(dateStr) {
+      const d = parseInt(dateStr.slice(8), 10);
+      return d + " 日";
+    }
+
+    function getDayManual(accountId, dayStr) {
+      return state.records.find(
+        (r) => r.type === "day_manual" && recordAccountId(r) === accountId && r.date === dayStr
+      );
+    }
+
+    function computeDayFromRecords(accountId, dateStr) {
+      let fundSpend = 0;
+      let fundProfit = 0;
+      let pointsUsed = 0;
+      const projects = [];
+
+      for (const r of state.records) {
+        if (recordAccountId(r) !== accountId) continue;
+        if (r.type === "day_manual") continue;
+        const d = r.date;
+        if (!d || d !== dateStr) continue;
+
+        if (r.type === "wear") fundSpend += wearAmount(r);
+        if (r.type === "points") {
+          pointsUsed += r.points || 0;
+          projects.push(r.note || "积分任务");
+        }
+        if (r.type === "claim") {
+          fundProfit += r.value || 0;
+          if (r.project) projects.push(r.project);
+        }
+        if (r.type === "pcs_tge" || r.type === "prime_tge") {
+          fundSpend += tgeCost(r);
+          if (r.project) projects.push(r.project);
+        }
+      }
+
+      for (const r of state.records) {
+        if (recordAccountId(r) !== accountId) continue;
+        if (r.type !== "pcs_tge" && r.type !== "prime_tge") continue;
+        if (!isTgeSold(r)) continue;
+        const soldDay = r.soldDate || r.date;
+        if (soldDay !== dateStr) continue;
+        fundProfit += tgeSoldAmount(r);
+        if (r.project) projects.push(r.project);
+      }
+
+      return { fundSpend, fundProfit, pointsUsed, projects };
+    }
+
+    function getDayContributions(accountId, dateStr) {
+      const base = computeDayFromRecords(accountId, dateStr);
+      const manual = getDayManual(accountId, dateStr);
+      if (!manual) return base;
+      return {
+        fundSpend: manual.fundDaily != null ? Number(manual.fundDaily) || 0 : base.fundSpend,
+        fundProfit: manual.profitDaily != null ? Number(manual.profitDaily) || 0 : base.fundProfit,
+        pointsUsed: manual.pointsDaily != null ? Number(manual.pointsDaily) || 0 : base.pointsUsed,
+        projects:
+          manual.projects != null && manual.projects !== ""
+            ? [String(manual.projects)]
+            : base.projects,
+      };
+    }
+
+    function getDayProfitAndSpend(accountId, dayStr) {
+      const c = getDayContributions(accountId, dayStr);
+      const m = getDayManual(accountId, dayStr);
+      return {
+        profit: m?.profitDaily != null ? Number(m.profitDaily) || 0 : c.fundProfit,
+        spend: m?.fundDaily != null ? Number(m.fundDaily) || 0 : c.fundSpend,
+      };
+    }
+
+    function buildMonthFundBalances(accountId, ym) {
+      const days = getDaysInMonth(ym);
+      const map = new Map();
+      let nextDayBase = getAccount(accountId)?.fundOpen ?? 0;
+
+      for (const d of days) {
+        const manual = getDayManual(accountId, d);
+        let displayBalance;
+        if (manual?.fundBalance != null) {
+          displayBalance = Number(manual.fundBalance) || 0;
+        } else {
+          displayBalance = nextDayBase;
+        }
+        map.set(d, displayBalance);
+
+        const { profit, spend } = getDayProfitAndSpend(accountId, d);
+        nextDayBase = displayBalance + profit - spend;
+      }
+      return map;
+    }
+
+    function getRowDisplay(accountId, dayStr, fundBalances) {
+      const s = computeAccountRowStats(accountId, dayStr);
+      const m = getDayManual(accountId, dayStr);
+      const projectsRaw =
+        m?.projects != null && m.projects !== "" ? m.projects : s.projects === "—" ? "" : s.projects;
+      const chainedBalance = fundBalances?.get(dayStr) ?? s.fundBalance;
+      return {
+        date: dayStr,
+        fundBalance: m?.fundBalance != null ? Number(m.fundBalance) : chainedBalance,
+        fundDaily: m?.fundDaily != null ? Number(m.fundDaily) : s.fundDaily,
+        pointsBalance: m?.pointsBalance != null ? Number(m.pointsBalance) : s.pointsBalance,
+        pointsDaily: m?.pointsDaily != null ? Number(m.pointsDaily) : s.pointsDaily,
+        projects: projectsRaw,
+        profitDaily: m?.profitDaily != null ? Number(m.profitDaily) : s.profitDaily,
+        isManual: !!m,
+        fundBalanceAuto: m?.fundBalance == null,
+      };
+    }
+
+    function collectAccountDatesThrough(accountId, dayStr) {
+      const dates = new Set();
+      for (const r of state.records) {
+        if (recordAccountId(r) !== accountId) continue;
+        if (r.date && r.date <= dayStr) dates.add(r.date);
+        if ((r.type === "pcs_tge" || r.type === "prime_tge") && isTgeSold(r)) {
+          const soldDay = r.soldDate || r.date;
+          if (soldDay && soldDay <= dayStr) dates.add(soldDay);
+        }
+      }
+      return dates;
+    }
+
+    function computeAccountRowStats(accountId, dayStr) {
+      const acc = getAccount(accountId);
+      const fundOpen = acc?.fundOpen ?? 0;
+      const pointsOpen = acc?.pointsOpen ?? 0;
+
+      let fundProfitCum = 0;
+      let fundSpendCum = 0;
+      let pointsUsedCum = 0;
+
+      for (const d of collectAccountDatesThrough(accountId, dayStr)) {
+        const c = getDayContributions(accountId, d);
+        fundProfitCum += c.fundProfit;
+        fundSpendCum += c.fundSpend;
+        pointsUsedCum += c.pointsUsed;
+      }
+
+      const today = getDayContributions(accountId, dayStr);
+      const projects = today.projects;
+      const fundDaily = today.fundSpend;
+      const profitDaily = today.fundProfit;
+      const pointsDaily = today.pointsUsed;
+      const hasActivity =
+        fundDaily > 0 || pointsDaily > 0 || profitDaily > 0 || projects.length > 0 || !!getDayManual(accountId, dayStr);
+
+      const ym = dayStr.slice(0, 7);
+      const chained = buildMonthFundBalances(accountId, ym).get(dayStr);
+      return {
+        fundBalance: chained != null ? chained : fundOpen + fundProfitCum - fundSpendCum,
+        fundDaily,
+        pointsBalance: pointsOpen - pointsUsedCum,
+        pointsDaily,
+        projects: projects.join("、") || "—",
+        profitDaily,
+        hasActivity,
+        fundOpen,
+        pointsOpen,
+      };
+    }
+
+    function collectAllAccountDates(accountId) {
+      const dates = new Set();
+      for (const r of state.records) {
+        if (recordAccountId(r) !== accountId) continue;
+        if (r.date) dates.add(r.date);
+        if ((r.type === "pcs_tge" || r.type === "prime_tge") && isTgeSold(r)) {
+          const soldDay = r.soldDate || r.date;
+          if (soldDay) dates.add(soldDay);
+        }
+      }
+      return dates;
+    }
+
+    function computeAccountWearTotal(accountId) {
+      let total = 0;
+      const wearDays = new Set();
+
+      for (const r of state.records) {
+        if (recordAccountId(r) !== accountId) continue;
+        if (r.type === "wear") {
+          total += wearAmount(r);
+          if (r.date) wearDays.add(r.date);
+        }
+      }
+
+      for (const r of state.records) {
+        if (recordAccountId(r) !== accountId) continue;
+        if (r.type !== "day_manual" || r.fundDaily == null) continue;
+        if (r.date && wearDays.has(r.date)) continue;
+        total += Number(r.fundDaily) || 0;
+      }
+
+      return total;
+    }
+
+    function computeGlobalStats() {
+      let totalInvest = 0;
+      let totalWear = 0;
+      let totalProfit = 0;
+      let totalBalance = 0;
+      const accountCount = state.accounts.length;
+
+      for (const acc of state.accounts) {
+        totalInvest += acc.fundOpen ?? 0;
+        totalWear += computeAccountWearTotal(acc.id);
+        const s = computeAccountLifetimeStats(acc.id);
+        totalProfit += s.totalProfit;
+        totalBalance += s.endBalance;
+      }
+
+      const netProfit = totalProfit - totalWear;
+
+      return {
+        totalInvest,
+        totalWear,
+        totalProfit,
+        totalBalance,
+        netProfit,
+        accountCount,
+      };
+    }
+
+    function computeAccountLifetimeStats(accountId) {
+      const acc = getAccount(accountId);
+      const fundOpen = acc?.fundOpen ?? 0;
+      const pointsOpen = acc?.pointsOpen ?? 0;
+      const dates = collectAllAccountDates(accountId);
+
+      let totalProfit = 0;
+      let totalSpend = 0;
+      let totalPoints = 0;
+
+      for (const d of dates) {
+        const c = getDayContributions(accountId, d);
+        totalProfit += c.fundProfit;
+        totalSpend += c.fundSpend;
+        totalPoints += c.pointsUsed;
+      }
+
+      const sorted = [...dates].sort();
+      let endBalance = fundOpen;
+      let nextDayBase = fundOpen;
+      for (const d of sorted) {
+        const manual = getDayManual(accountId, d);
+        const displayBalance =
+          manual?.fundBalance != null ? Number(manual.fundBalance) || 0 : nextDayBase;
+        const { profit, spend } = getDayProfitAndSpend(accountId, d);
+        nextDayBase = displayBalance + profit - spend;
+        endBalance = nextDayBase;
+      }
+
+      const netProfit = totalProfit - totalSpend;
+      return {
+        fundOpen,
+        pointsOpen,
+        totalProfit,
+        totalSpend,
+        netProfit,
+        endBalance,
+        totalPoints,
+        pointsRemaining: pointsOpen - totalPoints,
+        activeDays: dates.size,
+      };
+    }
+
+    function computeAccountMonthTotals(accountId, ym) {
+      let monthProfit = 0;
+      let monthFundSpend = 0;
+      let monthPoints = 0;
+
+      for (const d of getDaysInMonth(ym)) {
+        const c = getDayContributions(accountId, d);
+        monthProfit += c.fundProfit;
+        monthFundSpend += c.fundSpend;
+        monthPoints += c.pointsUsed;
+      }
+
+      return { monthProfit, monthFundSpend, monthPoints, monthNet: monthProfit - monthFundSpend };
+    }
+
+    function wearAmount(r) {
+      if (r.amount != null) return r.amount;
+      if (r.total != null) return r.total;
+      if (r.accounts != null && r.perAccount != null) return r.accounts * r.perAccount;
+      return 0;
+    }
+
+    function isTgeSold(r) {
+      if (r.soldStatus === "sold") return true;
+      if (r.soldStatus === "unsold") return false;
+      if ((r.sold || 0) > 0) return true;
+      if ((r.holding || 0) > 0) return false;
+      return false;
+    }
+
+    function tgeSoldAmount(r) {
+      if (!isTgeSold(r)) return 0;
+      return r.sold || 0;
+    }
+
+    function tgeCost(r) {
+      return (r.cost || 0) + (r.fee || 0);
+    }
+
+    function todayISO() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function fmtMoney(n) {
+      const sign = n < 0 ? "-" : "";
+      const abs = Math.abs(n);
+      return sign + "$" + abs.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function fmtNum(n) {
+      if (!n) return "0";
+      return Math.round(n).toLocaleString();
+    }
+
+    function escapeHtml(s) {
+      const d = document.createElement("div");
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    function setBanner(kind, message) {
+      const banner = document.getElementById("data-banner");
+      if (!banner) return;
+      if (!kind) {
+        banner.hidden = true;
+        banner.textContent = "";
+        banner.className = "data-banner";
+        return;
+      }
+      banner.hidden = false;
+      banner.className = "data-banner " + kind;
+      banner.textContent = message;
+    }
+
+    function updateLastUpdated() {
+      const el = document.getElementById("last-updated");
+      if (!el) return;
+      if (!lastFetchedAt) {
+        el.textContent = "尚未加载";
+        return;
+      }
+      el.textContent =
+        "更新于 " +
+        lastFetchedAt.toLocaleString("zh-CN", {
+          month: "numeric",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+    }
+
+    function renderGlobalStats() {
+      const el = document.getElementById("global-stats");
+      if (!el) return;
+      const g = computeGlobalStats();
+      const profitClass = g.totalProfit < 0 ? " negative-profit" : "";
+      const balanceClass = g.totalBalance < g.totalInvest ? " negative-balance" : "";
+
+      el.innerHTML = `
+        <div class="global-stat-card accent-invest">
+          <div class="label">总投入</div>
+          <div class="value">${fmtMoney(g.totalInvest)}</div>
+          <div class="hint">${g.accountCount} 个账户期初资金合计</div>
+        </div>
+        <div class="global-stat-card accent-wear">
+          <div class="label">总磨损</div>
+          <div class="value">${fmtMoney(g.totalWear)}</div>
+          <div class="hint">刷号及当日资金消耗累计</div>
+        </div>
+        <div class="global-stat-card accent-profit${profitClass}">
+          <div class="label">总获利</div>
+          <div class="value">${fmtMoney(g.totalProfit)}</div>
+          <div class="hint">空投 / TGE 等收益合计</div>
+        </div>
+        <div class="global-stat-card accent-balance${balanceClass}">
+          <div class="label">总余额</div>
+          <div class="value">${fmtMoney(g.totalBalance)}</div>
+          <div class="hint">各账户当前资金余额合计 · 净盈亏 ${fmtMoney(g.netProfit)}</div>
+        </div>
+      `;
+    }
+
+    function renderAccountPreviewContent(accountId) {
+      const acc = getAccount(accountId);
+      if (!acc) return "";
+      const s = computeAccountLifetimeStats(accountId);
+      const netClass = s.netProfit > 0 ? "positive" : s.netProfit < 0 ? "negative" : "";
+      const created =
+        acc.createdAt != null
+          ? new Date(acc.createdAt).toLocaleDateString("zh-CN", { year: "numeric", month: "short", day: "numeric" })
+          : "—";
+
+      return `
+        <div class="account-preview-head">${escapeHtml(acc.name)}</div>
+        <div class="account-preview-sub">自 ${created} 创建 · ${s.activeDays} 个活跃日</div>
+        <div class="account-preview-hero ${netClass}">
+          <span class="label">总体净盈亏</span>
+          <span class="value">${fmtMoney(s.netProfit)}</span>
+        </div>
+        <ul class="account-preview-list">
+          <li><span class="k">累计获利</span><span class="v amount-pos">${fmtMoney(s.totalProfit)}</span></li>
+          <li><span class="k">累计消耗</span><span class="v amount-neg">${fmtMoney(s.totalSpend)}</span></li>
+          <li><span class="k">当前资金余额</span><span class="v">${fmtMoney(s.endBalance)}</span></li>
+          <li><span class="k">期初资金</span><span class="v">${fmtMoney(s.fundOpen)}</span></li>
+          <li><span class="k">累计积分消耗</span><span class="v">${s.totalPoints.toLocaleString()}</span></li>
+          <li><span class="k">积分结余</span><span class="v">${s.pointsRemaining.toLocaleString()}</span></li>
+        </ul>
+      `;
+    }
+
+    let accountPreviewShowTimer = null;
+    let accountPreviewHideTimer = null;
+    let accountPreviewActiveId = null;
+
+    function positionAccountPreview(anchorEl) {
+      const preview = document.getElementById("account-preview");
+      if (!preview || !anchorEl) return;
+      const rect = anchorEl.getBoundingClientRect();
+      const margin = 10;
+      let left = rect.left;
+      let top = rect.bottom + margin;
+      preview.classList.add("show");
+      preview.setAttribute("aria-hidden", "false");
+      const pw = preview.offsetWidth;
+      const ph = preview.offsetHeight;
+      if (left + pw > window.innerWidth - margin) {
+        left = Math.max(margin, window.innerWidth - pw - margin);
+      }
+      if (top + ph > window.innerHeight - margin) {
+        top = Math.max(margin, rect.top - ph - margin);
+      }
+      preview.style.left = left + "px";
+      preview.style.top = top + "px";
+    }
+
+    function showAccountPreview(accountId, anchorEl) {
+      clearTimeout(accountPreviewHideTimer);
+      const preview = document.getElementById("account-preview");
+      if (!preview) return;
+      accountPreviewActiveId = accountId;
+      anchorEl.classList.add("preview-active");
+      preview.innerHTML = renderAccountPreviewContent(accountId);
+      positionAccountPreview(anchorEl);
+    }
+
+    function hideAccountPreview() {
+      const preview = document.getElementById("account-preview");
+      document.querySelectorAll(".account-tag.preview-active").forEach((el) => {
+        el.classList.remove("preview-active");
+      });
+      if (preview) {
+        preview.classList.remove("show");
+        preview.setAttribute("aria-hidden", "true");
+      }
+      accountPreviewActiveId = null;
+    }
+
+    function bindAccountPreview() {
+      const list = document.getElementById("account-list");
+      if (!list || list.dataset.previewBound) return;
+      list.dataset.previewBound = "1";
+
+      list.addEventListener("mouseover", (e) => {
+        const tag = e.target.closest(".account-tag[data-account-id]");
+        if (!tag) return;
+        const id = tag.dataset.accountId;
+        clearTimeout(accountPreviewHideTimer);
+        clearTimeout(accountPreviewShowTimer);
+        if (accountPreviewActiveId === id) return;
+        accountPreviewShowTimer = setTimeout(() => showAccountPreview(id, tag), 140);
+      });
+
+      list.addEventListener("mouseout", (e) => {
+        const tag = e.target.closest(".account-tag[data-account-id]");
+        if (!tag) return;
+        const related = e.relatedTarget;
+        if (related && tag.contains(related)) return;
+        if (related && related.closest?.(".account-tag[data-account-id]")) return;
+        clearTimeout(accountPreviewShowTimer);
+        accountPreviewHideTimer = setTimeout(hideAccountPreview, 100);
+      });
+
+      list.addEventListener("scroll", hideAccountPreview, { passive: true });
+    }
+
+    function renderAccountList() {
+      const list = document.getElementById("account-list");
+      if (!list) return;
+      if (!state.accounts.length) {
+        list.innerHTML = '<p class="empty-state">暂无账户数据</p>';
+        return;
+      }
+      list.innerHTML = state.accounts
+        .map((a) => {
+          const fundOpen = a.fundOpen ?? 0;
+          const pointsOpen = a.pointsOpen ?? 0;
+          return `
+            <div class="account-tag" data-account-id="${a.id}">
+              <span class="account-tag-head"><strong>${escapeHtml(a.name)}</strong></span>
+              <span class="account-tag-meta">初始 ${fmtMoney(fundOpen)} · 积分 ${pointsOpen.toLocaleString()}</span>
+            </div>
+          `;
+        })
+        .join("");
+      bindAccountPreview();
+    }
+
+    function renderVisitorOpeningRow(accountId) {
+      const acc = getAccount(accountId);
+      const fundOpen = acc?.fundOpen ?? 0;
+      const pointsOpen = acc?.pointsOpen ?? 0;
+      return `
+        <tr class="day-has-data">
+          <td class="mono">期初</td>
+          <td class="mono">${fmtMoney(fundOpen)}</td>
+          <td class="mono">—</td>
+          <td class="mono">${fmtNum(pointsOpen)}</td>
+          <td class="mono">—</td>
+          <td class="projects-cell">—</td>
+          <td class="mono">—</td>
+        </tr>
+      `;
+    }
+
+    function renderVisitorDayRow(accountId, dayStr, ym, fundBalances) {
+      const d = getRowDisplay(accountId, dayStr, fundBalances);
+      const stats = computeAccountRowStats(accountId, dayStr);
+      const rowClass = [
+        d.isManual ? "day-manual" : "",
+        d.isManual || stats.hasActivity ? "day-has-data" : "day-empty",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      const balanceClass = d.fundBalanceAuto ? "balance-auto" : "";
+      const projects = d.projects ? escapeHtml(String(d.projects)) : "—";
+      return `
+        <tr class="${rowClass}">
+          <td>${formatDayLabel(dayStr)}</td>
+          <td class="mono ${balanceClass}">${fmtMoney(d.fundBalance)}</td>
+          <td class="mono">${d.fundDaily ? fmtMoney(d.fundDaily) : "—"}</td>
+          <td class="mono">${fmtNum(d.pointsBalance)}</td>
+          <td class="mono">${d.pointsDaily ? fmtNum(d.pointsDaily) : "—"}</td>
+          <td class="projects-cell">${projects}</td>
+          <td class="mono">${d.profitDaily ? fmtMoney(d.profitDaily) : "—"}</td>
+        </tr>
+      `;
+    }
+
+    function renderShareCard() {
+      const container = document.getElementById("share-card");
+      if (!container) return;
+      const acc = state.accounts[0];
+      if (!acc) {
+        container.innerHTML = '<p class="empty-state">无账户数据</p>';
+        return;
+      }
+      const ym = accountOverviewMonth || todayISO().slice(0, 7);
+      const days = getDaysInMonth(ym);
+      const monthLabel = ym.replace("-", "年") + "月";
+      const tot = computeAccountMonthTotals(acc.id, ym);
+      const life = computeAccountLifetimeStats(acc.id);
+      const fundBalances = buildMonthFundBalances(acc.id, ym);
+      const dayRows =
+        renderVisitorOpeningRow(acc.id) +
+        days.map((d) => renderVisitorDayRow(acc.id, d, ym, fundBalances)).join("");
+
+      container.innerHTML = `
+        <span class="share-badge">单账户分享 · 只读</span>
+        <div class="share-card-head">
+          <h2>${escapeHtml(acc.name)}</h2>
+          <p class="share-card-meta">${monthLabel} · 初始 ${fmtMoney(acc.fundOpen ?? 0)} · 期初积分 ${(acc.pointsOpen ?? 0).toLocaleString()}</p>
+          <p class="share-card-meta">月获利 ${fmtMoney(tot.monthProfit)} · 月消耗 ${fmtMoney(tot.monthFundSpend)} · 月净 ${fmtMoney(tot.monthNet)} · 累计净盈亏 ${fmtMoney(life.netProfit)}</p>
+        </div>
+        <div class="table-scroll">
+          <table class="account-day-table">
+            <thead>
+              <tr>
+                <th>时期</th>
+                <th>资金结余</th>
+                <th>资金当日消耗</th>
+                <th>积分结余</th>
+                <th>积分当日消耗</th>
+                <th>参与项目名称</th>
+                <th>当日获利</th>
+              </tr>
+            </thead>
+            <tbody>${dayRows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function render() {
+      renderShareCard();
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => el.classList.remove("show"), 2400);
+    }
+
+    async function exportSharePng() {
+      const el = document.getElementById("share-card");
+      if (!el || typeof html2canvas !== "function") {
+        showToast("无法导出图片");
+        return;
+      }
+      try {
+        const canvas = await html2canvas(el, {
+          scale: 2,
+          backgroundColor: "#fffdf9",
+          useCORS: true,
+        });
+        const a = document.createElement("a");
+        const acc = state.accounts[0];
+        const ym = accountOverviewMonth || todayISO().slice(0, 7);
+        a.download = (acc ? acc.name : "account") + "-" + ym + ".png";
+        a.href = canvas.toDataURL("image/png");
+        a.click();
+        showToast("图片已下载");
+      } catch {
+        showToast("导出失败");
+      }
+    }
+
+    let shareToken = "";
+
+    async function loadShareData(manual) {
+      if (loadInFlight) return;
+      if (!shareToken) {
+        setBanner("error", "链接无效：缺少分享 token");
+        return;
+      }
+      loadInFlight = true;
+      const btn = document.getElementById("btn-refresh");
+      if (btn) btn.disabled = true;
+      if (manual || !lastFetchedAt) setBanner("loading", "正在加载…");
+
+      try {
+        const res = await fetch("/api/share/" + shareToken, { cache: "no-store" });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "HTTP " + res.status);
+        }
+        const data = await res.json();
+        applyState({ accounts: data.accounts, records: data.records });
+        lastFetchedAt = new Date();
+        updateLastUpdated();
+        setBanner(null);
+        render();
+      } catch (err) {
+        setBanner("error", "加载失败：" + (err.message || "链接已失效"));
+        document.getElementById("share-card").innerHTML =
+          '<p class="empty-state">无法加载分享内容</p>';
+      } finally {
+        loadInFlight = false;
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    document.getElementById("btn-refresh").addEventListener("click", () => loadShareData(true));
+    document.getElementById("btn-export-png").addEventListener("click", exportSharePng);
+
+    document.getElementById("account-overview-month").addEventListener("change", (e) => {
+      accountOverviewMonth = e.target.value || todayISO().slice(0, 7);
+      renderShareCard();
+    });
+
+    function bootstrap() {
+      shareToken = new URLSearchParams(location.search).get("token") || "";
+      const iso = todayISO();
+      accountOverviewMonth = iso.slice(0, 7);
+      document.getElementById("account-overview-month").value = accountOverviewMonth;
+      loadShareData(true);
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>
